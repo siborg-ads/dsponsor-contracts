@@ -2,18 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "./DSponsorNFT.sol";
+import "./interfaces/IDSponsorNFTFactory.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
 /**
  * @dev This is a factory contract to create DSponsorNFT contracts.
  * It uses a minimal proxy for gas efficiency and to reduce deployment costs.
  */
-interface IDSponsorNFTFactory {
-    function createDSponsorNFT(
-        DSponsorNFT.InitParams memory params
-    ) external returns (address);
-}
-
 contract DSponsorNFTFactory is IDSponsorNFTFactory {
     event NewDSponsorNFT(
         address indexed contractAddr,
@@ -33,6 +28,9 @@ contract DSponsorNFTFactory is IDSponsorNFTFactory {
     address public immutable nftImplementation;
 
     constructor(address _nftImplementation) {
+        if (_nftImplementation == address(0)) {
+            revert ZeroAddress();
+        }
         nftImplementation = _nftImplementation;
     }
 

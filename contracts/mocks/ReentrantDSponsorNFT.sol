@@ -5,10 +5,11 @@ import "../lib/Reentrant.sol";
 import "../interfaces/IDSponsorNFT.sol";
 
 contract ReentrantDSponsorNFT is Reentrancy {
-    uint256 public tokenId;
+    uint256 public constant tokenId = 15;
 
     function _executeAttack() internal override {
         if (reentrancyStage != State.ATTACK) {
+            // slither-disable-next-line reentrancy-eth
             IDSponsorNFT(msg.sender).mint{value: msg.value}(
                 tokenId,
                 address(this),

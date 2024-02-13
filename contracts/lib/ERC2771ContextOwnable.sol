@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
- * @title ERC2771Context
+ * @title ERC2771ContextOwnable
  * @author Anthony Gourraud
  * @notice Enable gasless transactions using EIP2771 Approach, forwarder can be updated by owner
  * @dev Code from OZ's ERC2771Context smart contract
  */
-abstract contract ERC2771Context is Ownable {
+abstract contract ERC2771ContextOwnable is Ownable {
     address private _trustedForwarder;
 
     constructor(address forwarder, address initialOwner) Ownable(initialOwner) {
@@ -21,6 +21,7 @@ abstract contract ERC2771Context is Ownable {
      * @dev Update the address of the trusted forwarder.
      */
     function setTrustedForwarder(address forwarder) external onlyOwner {
+        // slither-disable-next-line missing-zero-check
         _trustedForwarder = forwarder;
     }
 

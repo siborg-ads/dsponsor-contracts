@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "./DSponsorAgreements.sol";
-import {IDSponsorNFTFactory} from "./DSponsorNFTFactory.sol";
 import "./interfaces/IDSponsorNFT.sol";
+import "./interfaces/IDSponsorNFTFactory.sol";
 import "./lib/ProtocolFee.sol";
 
 /**
@@ -76,7 +76,7 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
      */
     function mintAndSubmit(
         MintAndSubmitAdParams calldata params
-    ) external payable {
+    ) external payable nonReentrant {
         if (params.adDatas.length != params.adParameters.length) {
             revert InvalidAdData();
         }
@@ -109,8 +109,8 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
             params.referralAdditionalInformation // Additional info such as dapp developper address or tracking codes
         );
 
-        // Execute the mint with protocol fee through the callWithProtocolFee function
-        callWithProtocolFee(
+        // Execute the mint with protocol fee mechanism
+        _callWithProtocolFee(
             address(contractAddr),
             mintCallData,
             params.currency,
@@ -140,29 +140,29 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
         internal
         view
         virtual
-        override(ERC2771Context, Context)
+        override(ERC2771ContextOwnable, Context)
         returns (address)
     {
-        return ERC2771Context._msgSender();
+        return ERC2771ContextOwnable._msgSender();
     }
 
     function _msgData()
         internal
         view
         virtual
-        override(ERC2771Context, Context)
+        override(ERC2771ContextOwnable, Context)
         returns (bytes calldata)
     {
-        return ERC2771Context._msgData();
+        return ERC2771ContextOwnable._msgData();
     }
 
     function _contextSuffixLength()
         internal
         view
         virtual
-        override(ERC2771Context, Context)
+        override(ERC2771ContextOwnable, Context)
         returns (uint256)
     {
-        return ERC2771Context._contextSuffixLength();
+        return ERC2771ContextOwnable._contextSuffixLength();
     }
 }

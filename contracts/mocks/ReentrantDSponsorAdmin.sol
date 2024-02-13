@@ -6,13 +6,31 @@ import "../interfaces/IDSponsorNFT.sol";
 import "../DSponsorAdmin.sol";
 
 contract ReentrantDSponsorAdmin is Reentrancy {
-    uint256 public tokenId;
+    uint256 public constant tokenId = 10;
 
     bool public pwed = false;
 
-    function dummy(bool _pwed) public {
+    function dummy(bool _pwed) public payable {
+        // slither-disable-next-line reentrancy-benign
         _executeAttack();
         pwed = _pwed;
+    }
+
+    function getMintPrice(
+        uint256,
+        address
+    ) public pure returns (bool enabled, uint256 amount) {
+        return (true, 10);
+    }
+
+    function getOwner() public view returns (address) {
+        return address(this);
+    }
+
+    function mint(uint256, address, address, string calldata) public payable {
+        // slither-disable-next-line reentrancy-benign
+        _executeAttack();
+        pwed = true;
     }
 
     function _executeAttack() internal override {
@@ -33,7 +51,8 @@ contract ReentrantDSponsorAdmin is Reentrancy {
 
             reentrancyStage = State.ATTACK;
 
-            DSponsorAdmin(msg.sender).callWithProtocolFee(
+            // slither-disable-next-line reentrancy-eth
+            DSponsorAdmin(msg.sender).callWithProtocolFee{value: msg.value}(
                 address(this),
                 callData,
                 currency,

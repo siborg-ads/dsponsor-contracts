@@ -6,10 +6,9 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
- * @title ERC2771Context
+ * @title ERC2771ContextUpgradeable
  * @author Anthony Gourraud
  * @notice Enable gasless transactions using EIP2771 Approach, forwarder can be updated by owner
- * @dev Code from OZ's ERC2771Context smart contract
  */
 abstract contract ERC2771ContextUpgradeable is
     Initializable,
@@ -37,6 +36,7 @@ abstract contract ERC2771ContextUpgradeable is
      * @dev Update the address of the trusted forwarder.
      */
     function setTrustedForwarder(address forwarder) external onlyOwner {
+        // slither-disable-next-line missing-zero-check
         _trustedForwarder = forwarder;
     }
 

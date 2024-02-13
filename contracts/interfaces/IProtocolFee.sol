@@ -12,7 +12,7 @@ interface IProtocolFee {
         string additionalInformation;
     }
 
-    error ExternalCallError(string reason);
+    error ExternalCallError();
     error InsufficientAllowance();
     error InsufficientFunds();
     error ZeroAddress();

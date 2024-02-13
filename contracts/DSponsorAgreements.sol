@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IDSponsorAgreements.sol";
 import "./interfaces/IERC4907.sol";
-import "./lib/ERC2771Context.sol";
+import "./lib/ERC2771ContextOwnable.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
 /**
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/interfaces/IERC721.sol";
  * enabling creators/publishers to set up sponsoring conditions and sponsors to submit ad proposals.
  * Offers and proposals are managed through structured data and access control mechanisms.
  */
-contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
+contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
     /// @dev Counter for sponsoring offers from creators/publishers
     uint256 private _offerCountId;
 
@@ -28,7 +28,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
      *****************/
 
     modifier onlyAdmin(uint256 offerId) {
-        if (_sponsoringOffers[offerId].admins[_msgSender()] == false) {
+        if (!_sponsoringOffers[offerId].admins[_msgSender()]) {
             revert UnallowedAdminOperation(_msgSender(), offerId);
         }
         _;
@@ -39,8 +39,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
         string memory adParameter
     ) {
         if (
-            _sponsoringOffers[offerId].adParameters[_hashString(adParameter)] ==
-            false
+            !_sponsoringOffers[offerId].adParameters[_hashString(adParameter)]
         ) {
             revert UnallowedAdParameter(offerId, adParameter);
         }
@@ -78,8 +77,8 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
 
     modifier onlyValidator(uint256 offerId) {
         if (
-            _sponsoringOffers[offerId].admins[_msgSender()] == false &&
-            _sponsoringOffers[offerId].validators[_msgSender()] == false
+            !_sponsoringOffers[offerId].admins[_msgSender()] &&
+            !_sponsoringOffers[offerId].validators[_msgSender()]
         ) {
             revert UnallowedValidatorOperation(_msgSender(), offerId);
         }
@@ -96,7 +95,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
     constructor(
         address forwarder,
         address initialOwner
-    ) ERC2771Context(forwarder, initialOwner) {}
+    ) ERC2771ContextOwnable(forwarder, initialOwner) {}
 
     /* ****************
      *  PUBLIC FUNCTIONS
@@ -384,7 +383,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771Context {
         address[] calldata admins
     ) private {
         for (uint256 i = 0; i < admins.length; i++) {
-            if (enable == false && admins[i] == _msgSender()) {
+            if (!enable && admins[i] == _msgSender()) {
                 revert CannotRemoveSelfAsAdmin();
             }
             _sponsoringOffers[offerId].admins[admins[i]] = enable;

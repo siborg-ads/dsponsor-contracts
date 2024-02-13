@@ -7,18 +7,18 @@ import { executeByForwarder } from '../utils/eip712'
 import {
   DSponsorNFT,
   DSponsorNFTFactory,
-  ERC2771Forwarder,
+  ERC20,
   ERC20Mock,
+  ERC2771Forwarder,
   IDSponsorAgreements,
+  IProtocolFee,
   DSponsorAdmin,
-  ReentrantDSponsorAdmin,
-  ERC20
+  ReentrantDSponsorAdmin
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
-import { IProtocolFee } from '../typechain-types/contracts/ProtocolFee'
 import { ZERO_ADDRESS } from '../utils/constants'
 
-describe('DSponsorProtocolFee', function () {
+describe('DSponsorAdmin', function () {
   const provider = ethers.provider
 
   let DSponsorAdmin: DSponsorAdmin
@@ -587,15 +587,41 @@ describe('DSponsorProtocolFee', function () {
     it('Should revert if the call is reentrant', async function () {
       await loadFixture(deployFixture)
 
+      const value = 1000
       await expect(
         DSponsorAdmin.connect(user).callWithProtocolFee(
           ReentrantAddress,
           Reentrant.interface.encodeFunctionData('dummy', [true]),
           ZERO_ADDRESS,
-          0,
-          referral
+          value,
+          referral,
+          { value: value * 2 }
         )
-      ).to.revertedWithCustomError(DSponsorAdmin, 'ExternalCallError')
+      ).to.revertedWithCustomError(
+        DSponsorAdmin,
+        'ReentrancyGuardReentrantCall'
+      )
+
+      await DSponsorAdmin.connect(user).createOffer(ReentrantAddress, offerInit)
+      let offerId2 = offerId + 1
+      await expect(
+        DSponsorAdmin.connect(user).mintAndSubmit(
+          {
+            tokenId,
+            to: user2Addr,
+            currency: ZERO_ADDRESS,
+            tokenData,
+            offerId: offerId2,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          },
+          { value: value * 3 }
+        )
+      ).to.revertedWithCustomError(
+        DSponsorAdmin,
+        'ReentrancyGuardReentrantCall'
+      )
     })
   })
 

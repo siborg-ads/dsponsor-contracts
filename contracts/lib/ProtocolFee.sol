@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "../interfaces/IProtocolFee.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
@@ -26,15 +27,21 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
     uint96 public bps;
     address public recipient;
 
+    /**
+     *
+     * @param _swapRouter The address of the Uniswap V3 SwapRouter
+     * @param _recipient The address to receive the protocol fee
+     * @param _bps The initial protocol fee in basis points (400 for 4%)
+     */
     constructor(UniV3SwapRouter _swapRouter, address _recipient, uint96 _bps) {
         swapRouter = _swapRouter;
         _updateProtocolFee(_recipient, _bps);
     }
 
     /**
-     * @notice Executes a call to an external contract with protocol fee handling.
-     * If the tx is sent with a positive value and a valid ERC20 currency is specified,
-     * the contract swaps native coins to ERC20 tokens via Uniswap V3.
+     * @notice function intended to execute calls to external contracts with protocol fee handling,
+     * with the capability to handle both native currency and ERC20 token payments.
+     * It also includes logic to swap native currency to ERC20 tokens via Uniswap V3 if necessary.
      *
      * @param target The address of the contract to call
      * @param callData The calldata to be sent with the call
@@ -51,10 +58,30 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
         address currency,
         uint256 baseAmount,
         ReferralRevenue memory referral
-    ) public payable nonReentrant returns (bytes memory) {
-        uint256 fee = (baseAmount * bps) / 10000;
+    ) external payable nonReentrant returns (bytes memory) {
+        return
+            _callWithProtocolFee(
+                target,
+                callData,
+                currency,
+                baseAmount,
+                referral
+            );
+    }
+
+    /// @dev Calling this function with no nonReentrant modifier is dangerous as it allows reentrancy
+    function _callWithProtocolFee(
+        address target,
+        bytes memory callData,
+        address currency,
+        uint256 baseAmount,
+        ReferralRevenue memory referral
+    ) internal returns (bytes memory) {
+        uint256 fee = Math.mulDiv(baseAmount, bps, 10000);
         uint256 totalAmount = fee + baseAmount;
+
         if (currency == address(0)) {
+            // Handling native currency
             if (msg.value < totalAmount) {
                 revert InsufficientFunds();
             }
@@ -62,18 +89,13 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                 Address.sendValue(payable(recipient), fee);
             }
         } else {
-            // the transaction is not in native currency,
-            // IF the user has sent value
-            //    we swap to the ERC20 currency
-            // ELSE
-            //    we transfer ERC tokens from user to this contract
+            // Handling ERC20 tokens
             if (msg.value > 0) {
-                // contract receives tokens in ERC20
+                // Swap native currency to ERC20 if value is sent
                 _swapNativeToERC20(currency, totalAmount);
-
-                // send fee to recipient
                 IERC20(currency).safeTransfer(recipient, fee);
             } else {
+                // Transfer ERC20 tokens for user wallet
                 uint256 allowance = IERC20(currency).allowance(
                     _msgSender(),
                     address(this)
@@ -82,10 +104,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                     revert InsufficientAllowance();
                 }
 
-                // send fee to recipient
                 IERC20(currency).safeTransferFrom(_msgSender(), recipient, fee);
-
-                // send base amount to this contract
                 IERC20(currency).safeTransferFrom(
                     _msgSender(),
                     address(this),
@@ -97,12 +116,18 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             IERC20(currency).forceApprove(address(target), baseAmount);
         }
 
-        (bool success, bytes memory returnData) = target.call{
-            value: currency == address(0) ? msg.value - fee : 0
-        }(callData);
-        if (!success) {
-            revert ExternalCallError(string(returnData));
-        }
+        /**
+         *  @dev While this function ensures protocol fee handling and currency swapping,
+         * the actual outcome of the external call is dependent on the target contract's logic.
+         * This function does not enforce any constraints or expectations on the call's execution result,
+         * leaving the responsibility for handling the external call's effects to the caller or the target contract.
+         */
+        uint256 value = currency == address(0) ? msg.value - fee : 0;
+        bytes memory retData = Address.functionCallWithValue(
+            target,
+            callData,
+            value
+        );
 
         emit CallWithProtocolFee(
             target,
@@ -113,7 +138,34 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             referral.additionalInformation
         );
 
-        return returnData;
+        return retData;
+    }
+
+    /**
+     * @notice Swaps {msg.value} to ERC20 tokens via Uniswap V3
+     *
+     * @param currency The address of the ERC20 token to swap to
+     * @param amount The amount of ERC20 tokens to get
+     *
+     * @return amountOut The amount of ERC20 tokens received
+     */
+    function _swapNativeToERC20(
+        address currency,
+        uint256 amount
+    ) internal returns (uint256 amountOut) {
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
+            .ExactOutputSingleParams({
+                tokenIn: swapRouter.WETH9(),
+                tokenOut: currency,
+                fee: 3000,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountOut: amount,
+                amountInMaximum: msg.value,
+                sqrtPriceLimitX96: 0
+            });
+
+        amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
     }
 
     /**
@@ -131,24 +183,5 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
         bps = _bps;
         recipient = _recipient;
         emit FeeUpdate(_recipient, _bps);
-    }
-
-    function _swapNativeToERC20(
-        address currency,
-        uint256 amount
-    ) private returns (uint256 amountOut) {
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
-            .ExactOutputSingleParams({
-                tokenIn: swapRouter.WETH9(),
-                tokenOut: currency,
-                fee: 3000,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountOut: amount,
-                amountInMaximum: msg.value,
-                sqrtPriceLimitX96: 0
-            });
-
-        amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
     }
 }

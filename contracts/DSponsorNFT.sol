@@ -147,7 +147,7 @@ contract DSponsorNFT is
         if (to == address(0)) {
             revert CannotBeZeroAddress();
         }
-        uint256 paidAmount;
+        uint256 paidAmount = 0;
 
         // if sender is the owner, he does not need to pay
         if (_msgSender() != owner()) {
@@ -385,7 +385,7 @@ contract DSponsorNFT is
     ) external view returns (bool) {
         return
             (_ownerOf(tokenId) == address(0)) &&
-            (applyTokensAllowlist == false || allowedTokenIds[tokenId]);
+            (!applyTokensAllowlist || allowedTokenIds[tokenId]);
     }
 
     /* ****************
