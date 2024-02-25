@@ -159,11 +159,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         uint256 tokenId,
         string calldata adParameter,
         string calldata data
-    )
-        external
-        onlySponsor(offerId, tokenId)
-        onlyAllowedAdParameter(offerId, adParameter)
-    {
+    ) external onlySponsor(offerId, tokenId) {
         _submitAdProposal(offerId, tokenId, adParameter, data);
     }
 
@@ -322,7 +318,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         uint256 tokenId,
         string calldata adParameter,
         string calldata data
-    ) internal {
+    ) internal onlyAllowedAdParameter(offerId, adParameter) {
         if (bytes(data).length == 0) {
             revert NoAdDataSubmitted();
         }

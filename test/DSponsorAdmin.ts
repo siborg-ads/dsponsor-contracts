@@ -828,7 +828,7 @@ describe('DSponsorAdmin', function () {
           adDatas: ['', ...adDatas],
           referralAdditionalInformation
         })
-      ).to.reverted
+      ).to.revertedWithCustomError(DSponsorNFT, 'CannotBeZeroAddress')
 
       await expect(
         DSponsorAdmin.connect(user).mintAndSubmit({
@@ -839,6 +839,20 @@ describe('DSponsorAdmin', function () {
           offerId,
           adParameters: ['testParam', ...adParameters],
           adDatas: ['', ...adDatas],
+          referralAdditionalInformation
+        })
+      ).to.revertedWithCustomError(DSponsorAdmin, 'UnallowedAdParameter')
+
+      const [_, ...restAdDatas] = adDatas
+      await expect(
+        DSponsorAdmin.connect(user).mintAndSubmit({
+          tokenId,
+          to: user2Addr,
+          currency: ERC20MockAddress,
+          tokenData,
+          offerId,
+          adParameters,
+          adDatas: ['', ...restAdDatas],
           referralAdditionalInformation
         })
       ).to.revertedWithCustomError(DSponsorAdmin, 'NoAdDataSubmitted')
