@@ -95,15 +95,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                 _swapNativeToERC20(currency, totalAmount);
                 IERC20(currency).safeTransfer(recipient, fee);
             } else {
-                // Transfer ERC20 tokens for user wallet
-                uint256 allowance = IERC20(currency).allowance(
-                    _msgSender(),
-                    address(this)
-                );
-                if (allowance < totalAmount) {
-                    revert InsufficientAllowance();
-                }
-
+                // Transfer ERC20 tokens from user wallet
                 IERC20(currency).safeTransferFrom(_msgSender(), recipient, fee);
                 IERC20(currency).safeTransferFrom(
                     _msgSender(),
