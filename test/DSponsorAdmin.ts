@@ -503,7 +503,7 @@ describe('DSponsorAdmin', function () {
           ERC20Amount,
           referral
         )
-      ).to.revertedWithCustomError(DSponsorAdmin, 'InsufficientAllowance')
+      ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientAllowance')
     })
 
     it('Should revert if not enough ERC20 tokens', async function () {

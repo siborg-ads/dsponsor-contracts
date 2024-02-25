@@ -61,7 +61,7 @@ Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)]
 	- [DSponsorAgreements.onlyAllowedAdParameter(uint256,string)](contracts/DSponsorAgreements.sol#L37-L47)
 	- [DSponsorAgreements.onlySponsor(uint256,uint256)](contracts/DSponsorAgreements.sol#L50-L76)
 	- [DSponsorAgreements.onlyValidator(uint256)](contracts/DSponsorAgreements.sol#L78-L86)
-	- [DSponsorAgreements.validateAdProposal(uint256,uint256,uint256,string,bool,string)](contracts/DSponsorAgreements.sol#L214-L252)
+	- [DSponsorAgreements.reviewAdProposal(uint256,uint256,uint256,string,bool,string)](contracts/DSponsorAgreements.sol#L214-L252)
 
 contracts/DSponsorAdmin.sol#L77-L130
 

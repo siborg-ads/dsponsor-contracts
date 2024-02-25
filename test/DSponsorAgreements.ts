@@ -557,7 +557,7 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(owner).validateAdProposal(
+        DSponsorAgreements.connect(owner).reviewAdProposal(
           offerIdDSponsorNFT,
           tokensUser[1],
           proposalIdDSponsorNFT,
@@ -582,14 +582,14 @@ describe('DSponsorAgreements', function () {
           tokensUser[1],
           adParameters[1]
         )
-      ).to.be.deep.equal([proposalIdDSponsorNFT, proposalIdDSponsorNFT, 0])
+      ).to.be.deep.equal([0, proposalIdDSponsorNFT, 0])
     })
 
     it('Should allow to reject as an admin', async function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(owner).validateAdProposal(
+        DSponsorAgreements.connect(owner).reviewAdProposal(
           offerIdDSponsorNFT,
           tokensUser[1],
           proposalIdDSponsorNFT,
@@ -614,14 +614,14 @@ describe('DSponsorAgreements', function () {
           tokensUser[1],
           adParameters[1]
         )
-      ).to.be.deep.equal([proposalIdDSponsorNFT, 0, proposalIdDSponsorNFT])
+      ).to.be.deep.equal([0, 0, proposalIdDSponsorNFT])
     })
 
     it('Should allow to validate as a validator', async function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).validateAdProposal(
+        DSponsorAgreements.connect(validator).reviewAdProposal(
           offerIdDSponsorNFT,
           tokensUser[1],
           proposalIdDSponsorNFT,
@@ -668,7 +668,7 @@ describe('DSponsorAgreements', function () {
         .withArgs(validatorAddr, offerIdERC721Mock)
 
       await expect(
-        DSponsorAgreements.connect(user).validateAdProposal(
+        DSponsorAgreements.connect(user).reviewAdProposal(
           offerIdDSponsorNFT,
           tokensUser[1],
           proposalIdDSponsorNFT,
@@ -713,7 +713,7 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).validateAdProposal(
+        DSponsorAgreements.connect(validator).reviewAdProposal(
           offerIdERC721Mock,
           tokensUser[0],
           proposalIdDSponsorNFT,
@@ -738,7 +738,7 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).validateAdProposal(
+        DSponsorAgreements.connect(validator).reviewAdProposal(
           offerIdDSponsorNFT,
           tokensUser[1],
           proposalIdDSponsorNFT,

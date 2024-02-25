@@ -207,7 +207,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
      * @param reason Reason for validation or rejection, useful for feedback.
      * @dev Only callable by validators of the offer. Updates the status of the proposal. Emits `UpdateAdValidation` event.
      */
-    function validateAdProposal(
+    function reviewAdProposal(
         uint256 offerId,
         uint256 tokenId,
         uint256 proposalId,
@@ -219,10 +219,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
             offerId
         ].proposals[tokenId][_hashString(adParameter)];
 
-        if (
-            proposalId != adParameterProposals.lastSubmitted &&
-            proposalId != adParameterProposals.lastRejected
-        ) {
+        if (proposalId != adParameterProposals.lastSubmitted) {
             revert ProposalNotSubmittedBySponsor(
                 offerId,
                 tokenId,
@@ -236,6 +233,9 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         } else {
             adParameterProposals.lastRejected = proposalId;
         }
+
+        // The validator action is final. He cannot change the status of the proposal
+        adParameterProposals.lastSubmitted = 0;
 
         emit UpdateAdValidation(
             offerId,
