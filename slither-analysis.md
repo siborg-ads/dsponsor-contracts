@@ -3,10 +3,10 @@ Summary
  - [reentrancy-eth](#reentrancy-eth) (1 results) (High)
  - [divide-before-multiply](#divide-before-multiply) (8 results) (Medium)
  - [uninitialized-local](#uninitialized-local) (2 results) (Medium)
- - [unused-return](#unused-return) (4 results) (Medium)
+ - [unused-return](#unused-return) (3 results) (Medium)
  - [shadowing-local](#shadowing-local) (4 results) (Low)
  - [reentrancy-benign](#reentrancy-benign) (2 results) (Low)
- - [reentrancy-events](#reentrancy-events) (2 results) (Low)
+ - [reentrancy-events](#reentrancy-events) (3 results) (Low)
  - [timestamp](#timestamp) (4 results) (Low)
  - [assembly](#assembly) (28 results) (Informational)
  - [pragma](#pragma) (1 results) (Informational)
@@ -15,7 +15,7 @@ Summary
  - [solc-version](#solc-version) (62 results) (Informational)
  - [low-level-calls](#low-level-calls) (5 results) (Informational)
  - [missing-inheritance](#missing-inheritance) (1 results) (Informational)
- - [naming-convention](#naming-convention) (39 results) (Informational)
+ - [naming-convention](#naming-convention) (38 results) (Informational)
  - [similar-names](#similar-names) (2 results) (Informational)
  - [too-many-digits](#too-many-digits) (3 results) (Informational)
 ## reentrancy-eth
@@ -26,42 +26,42 @@ Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)]
 	External calls:
 	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
 		- [returndata = address(token).functionCall(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L96)
-		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L167)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success,returndata) = address(token).call(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L115)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
-		- [Address.sendValue(address(recipient),fee)](contracts/lib/ProtocolFee.sol#L88)
-		- [IERC20(currency).safeTransfer(recipient,fee)](contracts/lib/ProtocolFee.sol#L95)
-		- [IERC20(currency).safeTransferFrom(_msgSender(),recipient,fee)](contracts/lib/ProtocolFee.sol#L106)
-		- [IERC20(currency).safeTransferFrom(_msgSender(),address(this),baseAmount)](contracts/lib/ProtocolFee.sol#L107-L111)
-		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L115)
-		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L125-L129)
+		- [Address.sendValue(address(recipient),fee)](contracts/lib/ProtocolFee.sol#L72)
+		- [IERC20(currency).safeTransfer(recipient,fee)](contracts/lib/ProtocolFee.sol#L79)
+		- [IERC20(currency).safeTransferFrom(_msgSender(),recipient,fee)](contracts/lib/ProtocolFee.sol#L82)
+		- [IERC20(currency).safeTransferFrom(_msgSender(),address(this),baseAmount)](contracts/lib/ProtocolFee.sol#L83-L87)
+		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L91)
+		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L101-L105)
 	External calls sending eth:
 	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
-		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L167)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
 	State variables written after the call(s):
 	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L123-L128)
-		- [_sponsoringOffers[offerId].proposals[tokenId][_hashString(adParameter)].lastSubmitted = _proposalCounterId](contracts/DSponsorAgreements.sol#L336-L338)
+		- [_sponsoringOffers[offerId].proposals[tokenId][_hashString(adParameter)].lastSubmitted = _proposalCounterId](contracts/DSponsorAgreements.sol#L332-L334)
 	[DSponsorAgreements._sponsoringOffers](contracts/DSponsorAgreements.sol#L24) can be used in cross function reentrancies:
-	- [DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L320-L347)
-	- [DSponsorAgreements._updateOffer(uint256,bool,string,string)](contracts/DSponsorAgreements.sol#L349-L365)
-	- [DSponsorAgreements._updateOfferAdParameters(uint256,bool,string[])](contracts/DSponsorAgreements.sol#L367-L378)
-	- [DSponsorAgreements._updateOfferAdmins(uint256,bool,address[])](contracts/DSponsorAgreements.sol#L380-L392)
-	- [DSponsorAgreements._updateOfferValidators(uint256,bool,address[])](contracts/DSponsorAgreements.sol#L394-L403)
+	- [DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L316-L343)
+	- [DSponsorAgreements._updateOffer(uint256,bool,string,string)](contracts/DSponsorAgreements.sol#L345-L361)
+	- [DSponsorAgreements._updateOfferAdParameters(uint256,bool,string[])](contracts/DSponsorAgreements.sol#L363-L374)
+	- [DSponsorAgreements._updateOfferAdmins(uint256,bool,address[])](contracts/DSponsorAgreements.sol#L376-L388)
+	- [DSponsorAgreements._updateOfferValidators(uint256,bool,address[])](contracts/DSponsorAgreements.sol#L390-L399)
 	- [DSponsorAgreements.createOffer(IERC721,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAgreements.sol#L110-L147)
-	- [DSponsorAgreements.getOfferContract(uint256)](contracts/DSponsorAgreements.sol#L258-L260)
-	- [DSponsorAgreements.getOfferProposals(uint256,uint256,string)](contracts/DSponsorAgreements.sol#L262-L281)
-	- [DSponsorAgreements.isAllowedAdParameter(uint256,string)](contracts/DSponsorAgreements.sol#L283-L289)
-	- [DSponsorAgreements.isOfferAdmin(uint256,address)](contracts/DSponsorAgreements.sol#L291-L296)
-	- [DSponsorAgreements.isOfferDisabled(uint256)](contracts/DSponsorAgreements.sol#L298-L300)
-	- [DSponsorAgreements.isOfferValidator(uint256,address)](contracts/DSponsorAgreements.sol#L302-L307)
+	- [DSponsorAgreements.getOfferContract(uint256)](contracts/DSponsorAgreements.sol#L254-L256)
+	- [DSponsorAgreements.getOfferProposals(uint256,uint256,string)](contracts/DSponsorAgreements.sol#L258-L277)
+	- [DSponsorAgreements.isAllowedAdParameter(uint256,string)](contracts/DSponsorAgreements.sol#L279-L285)
+	- [DSponsorAgreements.isOfferAdmin(uint256,address)](contracts/DSponsorAgreements.sol#L287-L292)
+	- [DSponsorAgreements.isOfferDisabled(uint256)](contracts/DSponsorAgreements.sol#L294-L296)
+	- [DSponsorAgreements.isOfferValidator(uint256,address)](contracts/DSponsorAgreements.sol#L298-L303)
 	- [DSponsorAgreements.onlyAdmin(uint256)](contracts/DSponsorAgreements.sol#L30-L35)
 	- [DSponsorAgreements.onlyAllowedAdParameter(uint256,string)](contracts/DSponsorAgreements.sol#L37-L47)
 	- [DSponsorAgreements.onlySponsor(uint256,uint256)](contracts/DSponsorAgreements.sol#L50-L76)
 	- [DSponsorAgreements.onlyValidator(uint256)](contracts/DSponsorAgreements.sol#L78-L86)
-	- [DSponsorAgreements.reviewAdProposal(uint256,uint256,uint256,string,bool,string)](contracts/DSponsorAgreements.sol#L214-L252)
+	- [DSponsorAgreements.reviewAdProposal(uint256,uint256,uint256,string,bool,string)](contracts/DSponsorAgreements.sol#L210-L248)
 
 contracts/DSponsorAdmin.sol#L77-L130
 
@@ -164,12 +164,6 @@ node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol#L465-L482
 
 
  - [ ] ID-13
-[ReentrantDSponsorAdmin._executeAttack()](contracts/mocks/ReentrantDSponsorAdmin.sol#L36-L65) ignores return value by [DSponsorAdmin(msg.sender).callWithProtocolFee{value: msg.value}(address(this),callData,currency,baseAmount,referral)](contracts/mocks/ReentrantDSponsorAdmin.sol#L55-L61)
-
-contracts/mocks/ReentrantDSponsorAdmin.sol#L36-L65
-
-
- - [ ] ID-14
 [DSponsorAgreements.onlySponsor(uint256,uint256)](contracts/DSponsorAgreements.sol#L50-L76) ignores return value by [IERC4907(address(_sponsoringOffers[offerId].nftContract)).userOf(tokenId)](contracts/DSponsorAgreements.sol#L57-L64)
 
 contracts/DSponsorAgreements.sol#L50-L76
@@ -178,7 +172,7 @@ contracts/DSponsorAgreements.sol#L50-L76
 ## shadowing-local
 Impact: Low
 Confidence: High
- - [ ] ID-15
+ - [ ] ID-14
 [ERC4907Upgradeable.__ERC4907_init(string,string).symbol](contracts/lib/ERC4907Upgradeable.sol#L22) shadows:
 	- [ERC721Upgradeable.symbol()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L102-L105) (function)
 	- [IERC721Metadata.symbol()](node_modules/@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol#L21) (function)
@@ -186,14 +180,14 @@ Confidence: High
 contracts/lib/ERC4907Upgradeable.sol#L22
 
 
- - [ ] ID-16
+ - [ ] ID-15
 [DSponsorNFT.setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L231) shadows:
 	- [ERC721Upgradeable._baseURI()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L122-L124) (function)
 
 contracts/DSponsorNFT.sol#L231
 
 
- - [ ] ID-17
+ - [ ] ID-16
 [ERC4907Upgradeable.__ERC4907_init(string,string).name](contracts/lib/ERC4907Upgradeable.sol#L21) shadows:
 	- [ERC721Upgradeable.name()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L94-L97) (function)
 	- [IERC721Metadata.name()](node_modules/@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol#L16) (function)
@@ -201,7 +195,7 @@ contracts/DSponsorNFT.sol#L231
 contracts/lib/ERC4907Upgradeable.sol#L21
 
 
- - [ ] ID-18
+ - [ ] ID-17
 [DSponsorNFT._setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L506) shadows:
 	- [ERC721Upgradeable._baseURI()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L122-L124) (function)
 
@@ -211,34 +205,34 @@ contracts/DSponsorNFT.sol#L506
 ## reentrancy-benign
 Impact: Low
 Confidence: Medium
- - [ ] ID-19
+ - [ ] ID-18
 Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)](contracts/DSponsorAdmin.sol#L77-L130):
 	External calls:
 	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
 		- [returndata = address(token).functionCall(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L96)
-		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L167)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success,returndata) = address(token).call(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L115)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
-		- [Address.sendValue(address(recipient),fee)](contracts/lib/ProtocolFee.sol#L88)
-		- [IERC20(currency).safeTransfer(recipient,fee)](contracts/lib/ProtocolFee.sol#L95)
-		- [IERC20(currency).safeTransferFrom(_msgSender(),recipient,fee)](contracts/lib/ProtocolFee.sol#L106)
-		- [IERC20(currency).safeTransferFrom(_msgSender(),address(this),baseAmount)](contracts/lib/ProtocolFee.sol#L107-L111)
-		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L115)
-		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L125-L129)
+		- [Address.sendValue(address(recipient),fee)](contracts/lib/ProtocolFee.sol#L72)
+		- [IERC20(currency).safeTransfer(recipient,fee)](contracts/lib/ProtocolFee.sol#L79)
+		- [IERC20(currency).safeTransferFrom(_msgSender(),recipient,fee)](contracts/lib/ProtocolFee.sol#L82)
+		- [IERC20(currency).safeTransferFrom(_msgSender(),address(this),baseAmount)](contracts/lib/ProtocolFee.sol#L83-L87)
+		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L91)
+		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L101-L105)
 	External calls sending eth:
 	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
-		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L167)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
 	State variables written after the call(s):
 	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L123-L128)
-		- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L334)
+		- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L330)
 
 contracts/DSponsorAdmin.sol#L77-L130
 
 
- - [ ] ID-20
+ - [ ] ID-19
 Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L62):
 	External calls:
 	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L60)
@@ -246,10 +240,10 @@ Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitPara
 	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
 		- [_offerCountId ++](contracts/DSponsorAgreements.sol#L126)
 	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-		- [_sponsoringOffers[offerId].disabled = disable](contracts/DSponsorAgreements.sol#L355)
-		- [_sponsoringOffers[offerId].adParameters[_hashString(adParameters[i])] = enable](contracts/DSponsorAgreements.sol#L373-L375)
-		- [_sponsoringOffers[offerId].validators[validators[i]] = enable](contracts/DSponsorAgreements.sol#L400)
-		- [_sponsoringOffers[offerId].admins[admins[i]] = enable](contracts/DSponsorAgreements.sol#L389)
+		- [_sponsoringOffers[offerId].disabled = disable](contracts/DSponsorAgreements.sol#L351)
+		- [_sponsoringOffers[offerId].adParameters[_hashString(adParameters[i])] = enable](contracts/DSponsorAgreements.sol#L369-L371)
+		- [_sponsoringOffers[offerId].validators[validators[i]] = enable](contracts/DSponsorAgreements.sol#L396)
+		- [_sponsoringOffers[offerId].admins[admins[i]] = enable](contracts/DSponsorAgreements.sol#L385)
 		- [_sponsoringOffers[_offerCountId].nftContract = nftContract](contracts/DSponsorAgreements.sol#L128)
 
 contracts/DSponsorAdmin.sol#L56-L62
@@ -258,7 +252,7 @@ contracts/DSponsorAdmin.sol#L56-L62
 ## reentrancy-events
 Impact: Low
 Confidence: Medium
- - [ ] ID-21
+ - [ ] ID-20
 Reentrancy in [DSponsorNFTFactory.createDSponsorNFT(IDSponsorNFTBase.InitParams)](contracts/DSponsorNFTFactory.sol#L37-L58):
 	External calls:
 	- [DSponsorNFT(instance).initialize(params)](contracts/DSponsorNFTFactory.sol#L41)
@@ -268,18 +262,38 @@ Reentrancy in [DSponsorNFTFactory.createDSponsorNFT(IDSponsorNFTBase.InitParams)
 contracts/DSponsorNFTFactory.sol#L37-L58
 
 
+ - [ ] ID-21
+Reentrancy in [ProtocolFee._callWithProtocolFee(address,bytes,address,uint256,IProtocolFee.ReferralRevenue)](contracts/lib/ProtocolFee.sol#L56-L117):
+	External calls:
+	- [Address.sendValue(address(recipient),fee)](contracts/lib/ProtocolFee.sol#L72)
+	- [_swapNativeToERC20(currency,totalAmount)](contracts/lib/ProtocolFee.sol#L78)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
+	- [IERC20(currency).safeTransfer(recipient,fee)](contracts/lib/ProtocolFee.sol#L79)
+	- [IERC20(currency).safeTransferFrom(_msgSender(),recipient,fee)](contracts/lib/ProtocolFee.sol#L82)
+	- [IERC20(currency).safeTransferFrom(_msgSender(),address(this),baseAmount)](contracts/lib/ProtocolFee.sol#L83-L87)
+	- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L91)
+	- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L101-L105)
+	External calls sending eth:
+	- [_swapNativeToERC20(currency,totalAmount)](contracts/lib/ProtocolFee.sol#L78)
+		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
+	Event emitted after the call(s):
+	- [CallWithProtocolFee(target,currency,fee,referral.enabler,referral.spender,referral.additionalInformation)](contracts/lib/ProtocolFee.sol#L107-L114)
+
+contracts/lib/ProtocolFee.sol#L56-L117
+
+
  - [ ] ID-22
 Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L62):
 	External calls:
 	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L60)
 	Event emitted after the call(s):
-	- [UpdateOffer(offerId,disable,name,rulesURI,_sponsoringOffers[offerId].nftContract)](contracts/DSponsorAgreements.sol#L358-L364)
+	- [UpdateOffer(offerId,disable,name,rulesURI,_sponsoringOffers[offerId].nftContract)](contracts/DSponsorAgreements.sol#L354-L360)
 		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-	- [UpdateOfferAdParameter(offerId,adParameters[i],enable)](contracts/DSponsorAgreements.sol#L376)
+	- [UpdateOfferAdParameter(offerId,adParameters[i],enable)](contracts/DSponsorAgreements.sol#L372)
 		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-	- [UpdateOfferAdmin(offerId,admins[i],enable)](contracts/DSponsorAgreements.sol#L390)
+	- [UpdateOfferAdmin(offerId,admins[i],enable)](contracts/DSponsorAgreements.sol#L386)
 		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-	- [UpdateOfferValidator(offerId,validators[i],enable)](contracts/DSponsorAgreements.sol#L401)
+	- [UpdateOfferValidator(offerId,validators[i],enable)](contracts/DSponsorAgreements.sol#L397)
 		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
 
 contracts/DSponsorAdmin.sol#L56-L62
@@ -598,10 +612,10 @@ node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallba
 Impact: Informational
 Confidence: Medium
  - [ ] ID-56
-[DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L320-L347) has costly operations inside a loop:
-	- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L334)
+[DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L316-L343) has costly operations inside a loop:
+	- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L330)
 
-contracts/DSponsorAgreements.sol#L320-L347
+contracts/DSponsorAgreements.sol#L316-L343
 
 
  - [ ] ID-57
@@ -627,9 +641,9 @@ contracts/lib/ERC2771ContextUpgradeable.sol#L85-L102
 
 
  - [ ] ID-60
-[ReentrantDSponsorAdmin._completeAttack()](contracts/mocks/ReentrantDSponsorAdmin.sol#L67) is never used and should be removed
+[ReentrantDSponsorAdmin._completeAttack()](contracts/mocks/ReentrantDSponsorAdmin.sol#L60) is never used and should be removed
 
-contracts/mocks/ReentrantDSponsorAdmin.sol#L67
+contracts/mocks/ReentrantDSponsorAdmin.sol#L60
 
 
  - [ ] ID-61
@@ -1301,12 +1315,6 @@ contracts/interfaces/IDSponsorNFT.sol#L120
 
 
  - [ ] ID-170
-Parameter [ReentrantDSponsorAdmin.dummy(bool)._pwed](contracts/mocks/ReentrantDSponsorAdmin.sol#L13) is not in mixedCase
-
-contracts/mocks/ReentrantDSponsorAdmin.sol#L13
-
-
- - [ ] ID-171
 Function [ERC721Upgradeable.__ERC721_init(string,string)](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L53-L55) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L53-L55
@@ -1315,13 +1323,13 @@ node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.
 ## similar-names
 Impact: Informational
 Confidence: Medium
- - [ ] ID-172
+ - [ ] ID-171
 Variable [IUniswapV3SwapCallback.uniswapV3SwapCallback(int256,int256,bytes).amount0Delta](node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L17) is too similar to [IUniswapV3SwapCallback.uniswapV3SwapCallback(int256,int256,bytes).amount1Delta](node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L18)
 
 node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L17
 
 
- - [ ] ID-173
+ - [ ] ID-172
 Variable [ERC2771Context._trustedForwarder](node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23) is too similar to [ERC2771Context.constructor(address).trustedForwarder_](node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L32)
 
 node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23
@@ -1330,21 +1338,21 @@ node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23
 ## too-many-digits
 Impact: Informational
 Confidence: Medium
- - [ ] ID-174
+ - [ ] ID-173
 [Clones.clone(address)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L28-L41) uses literals with too many digits:
 	- [mstore(uint256,uint256)(0x00,implementation << 0x60 >> 0xe8 | 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L33)
 
 node_modules/@openzeppelin/contracts/proxy/Clones.sol#L28-L41
 
 
- - [ ] ID-175
+ - [ ] ID-174
 [ShortStrings.slitherConstructorConstantVariables()](node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L40-L123) uses literals with too many digits:
 	- [FALLBACK_SENTINEL = 0x00000000000000000000000000000000000000000000000000000000000000FF](node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L42)
 
 node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L40-L123
 
 
- - [ ] ID-176
+ - [ ] ID-175
 [Clones.cloneDeterministic(address,bytes32)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L50-L63) uses literals with too many digits:
 	- [mstore(uint256,uint256)(0x00,implementation << 0x60 >> 0xe8 | 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L55)
 

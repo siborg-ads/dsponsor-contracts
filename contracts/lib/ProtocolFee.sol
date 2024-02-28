@@ -51,25 +51,8 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
      * @return returnData The data returned by the external call
      *
      * Emits a `CallWithProtocolFee` event upon successful execution
+     * @dev Calling this function with no nonReentrant modifier is dangerous as it allows reentrancy
      */
-    function callWithProtocolFee(
-        address target,
-        bytes memory callData,
-        address currency,
-        uint256 baseAmount,
-        ReferralRevenue memory referral
-    ) external payable nonReentrant returns (bytes memory) {
-        return
-            _callWithProtocolFee(
-                target,
-                callData,
-                currency,
-                baseAmount,
-                referral
-            );
-    }
-
-    /// @dev Calling this function with no nonReentrant modifier is dangerous as it allows reentrancy
     function _callWithProtocolFee(
         address target,
         bytes memory callData,

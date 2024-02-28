@@ -11,7 +11,6 @@ import {
   ERC20Mock,
   ERC2771Forwarder,
   IDSponsorAgreements,
-  IProtocolFee,
   DSponsorAdmin,
   ReentrantDSponsorAdmin
 } from '../typechain-types'
@@ -60,7 +59,6 @@ describe('DSponsorAdmin', function () {
   const bps = 400
 
   let initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct
-  let referral: IProtocolFee.ReferralRevenueStruct
   let offerInit: IDSponsorAgreements.OfferInitParamsStruct
   let offerOptions: IDSponsorAgreements.OfferOptionsStruct
 
@@ -165,12 +163,6 @@ describe('DSponsorAdmin', function () {
       ERC20Amount * BigInt('20')
     )
 
-    referral = {
-      enabler: ownerAddr,
-      spender: userAddr,
-      additionalInformation: 'additionalInformation'
-    }
-
     Reentrant = await ethers.deployContract('ReentrantDSponsorAdmin', [])
     ReentrantAddress = await Reentrant.getAddress()
   }
@@ -186,442 +178,6 @@ describe('DSponsorAdmin', function () {
       expect(await DSponsorAdmin.owner()).to.equal(deployerAddr)
       expect(await DSponsorAdmin.recipient()).to.equal(treasuryAddr)
       expect(await DSponsorAdmin.bps()).to.equal(bps)
-    })
-  })
-
-  describe('callWithProtocolFee', function () {
-    it('Should work with ERC20', async function () {
-      await loadFixture(deployFixture)
-
-      const fee = (ERC20Amount * BigInt(bps.toString())) / BigInt('10000')
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral
-        )
-      )
-        .to.emit(DSponsorAdmin, 'CallWithProtocolFee')
-        .withArgs(
-          DSponsorNFT,
-          ERC20MockAddress,
-          fee,
-          referral.enabler,
-          referral.spender,
-          referral.additionalInformation
-        )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral
-        )
-      ).to.changeTokenBalances(
-        ERC20Mock,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [(fee + ERC20Amount) * BigInt('-1'), 0, ERC20Amount, fee, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral
-        )
-      ).to.changeTokenBalances(
-        DSponsorNFT,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 1, 0, 0, 0]
-      )
-    })
-
-    it('Should work with native currency', async function () {
-      await loadFixture(deployFixture)
-
-      const fee = (valuePrice * BigInt(bps.toString())) / BigInt('10000')
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          valuePrice,
-          referral,
-          { value: valuePrice + fee }
-        )
-      )
-        .to.emit(DSponsorAdmin, 'CallWithProtocolFee')
-        .withArgs(
-          DSponsorNFTAddress,
-          ZERO_ADDRESS,
-          fee,
-          referral.enabler,
-          referral.spender,
-          referral.additionalInformation
-        )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          valuePrice,
-          referral,
-          { value: valuePrice + fee }
-        )
-      ).to.changeEtherBalances(
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [(fee + valuePrice) * BigInt('-1'), 0, valuePrice, fee, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          valuePrice,
-          referral,
-          { value: valuePrice + fee }
-        )
-      ).to.changeTokenBalances(
-        DSponsorNFT,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 1, 0, 0, 0]
-      )
-    })
-
-    it('Should work even with no amount', async function () {
-      await loadFixture(deployFixture)
-
-      await DSponsorNFT.connect(owner).setDefaultMintPrice(
-        ZERO_ADDRESS,
-        true,
-        0
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          0,
-          referral
-        )
-      ).to.changeTokenBalances(
-        DSponsorNFT,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 1, 0, 0, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(owner).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          0,
-          referral
-        )
-      ).to.changeEtherBalances(
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 0, 0, 0, 0]
-      )
-    })
-
-    it('Should work even with low amount (no fee for treasury)', async function () {
-      await loadFixture(deployFixture)
-
-      await DSponsorNFT.connect(owner).setDefaultMintPrice(
-        ERC20MockAddress,
-        true,
-        1
-      )
-      await DSponsorNFT.connect(owner).setDefaultMintPrice(
-        ZERO_ADDRESS,
-        true,
-        1
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          1,
-          referral
-        )
-      ).to.changeTokenBalances(
-        DSponsorNFT,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 1, 0, 0, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          1,
-          referral
-        )
-      ).to.changeTokenBalances(
-        ERC20Mock,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [-1, 0, 1, 0, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          1,
-          referral,
-          { value: 1 }
-        )
-      ).to.changeEtherBalances(
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [-1, 0, 1, 0, 0]
-      )
-    })
-
-    it('Should work with a valid swap', async function () {
-      await loadFixture(deployFixture)
-
-      const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
-      const value = parseEther('1000')
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, USDCeAddr),
-          USDCeAddr,
-          USDCePrice,
-          referral,
-          { value: value }
-        )
-      ).to.changeTokenBalances(
-        USDCeContract,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 0, USDCePrice, fee, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, USDCeAddr),
-          USDCeAddr,
-          USDCePrice,
-          referral,
-          { value: value }
-        )
-      ).to.changeTokenBalances(
-        DSponsorNFT,
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [0, 1, 0, 0, 0]
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, USDCeAddr),
-          USDCeAddr,
-          USDCePrice,
-          referral,
-          { value: value }
-        )
-      ).to.changeEtherBalances(
-        [user, user2, owner, treasury, DSponsorAdmin],
-        [-value, 0, 0, 0, 0]
-      )
-    })
-
-    it('Should revert if value for the swap is too low', async function () {
-      await loadFixture(deployFixture)
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, USDCeAddr),
-          USDCeAddr,
-          USDCePrice,
-          referral,
-          { value: parseEther('0.01') }
-        )
-      ).to.reverted
-    })
-
-    it('Should revert if no path for the swap ', async function () {
-      await loadFixture(deployFixture)
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral,
-          { value: parseEther('0.01') }
-        )
-      ).to.reverted
-    })
-
-    it('Should revert if ERC20 Amount overflow', async function () {
-      await loadFixture(deployFixture)
-
-      const uint256Max = BigInt(
-        '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user2).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          uint256Max,
-          referral
-        )
-      ).to.revertedWithPanic(0x11)
-    })
-
-    it('Should revert if not enough ERC20 allowance', async function () {
-      await loadFixture(deployFixture)
-
-      const fee = (ERC20Amount * BigInt(bps.toString())) / BigInt('10000')
-
-      await expect(
-        DSponsorAdmin.connect(user2).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral
-        )
-      ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientAllowance')
-    })
-
-    it('Should revert if not enough ERC20 tokens', async function () {
-      await loadFixture(deployFixture)
-
-      const fee = (ERC20Amount * BigInt(bps.toString())) / BigInt('10000')
-
-      await ERC20Mock.connect(user2).approve(
-        DSponsorAdminAddress,
-        ERC20Amount * BigInt('20')
-      )
-      await ERC20Mock.mint(user2Addr, ERC20Amount) // not enough as we need to pay the fee
-
-      await expect(
-        DSponsorAdmin.connect(user2).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ERC20MockAddress),
-          ERC20MockAddress,
-          ERC20Amount,
-          referral
-        )
-      ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientBalance')
-
-      expect(
-        await ERC20Mock.balanceOf(await DSponsorAdmin.recipient())
-      ).to.equal(0)
-    })
-
-    it('Should revert is value is too low', async function () {
-      await loadFixture(deployFixture)
-
-      const balanceBeforeCall = await provider.getBalance(
-        await DSponsorAdmin.recipient()
-      )
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(user2Addr, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          valuePrice,
-          referral,
-          { value: valuePrice }
-        )
-      ).to.revertedWithCustomError(DSponsorAdmin, 'InsufficientFunds')
-
-      const balanceAfterCall = await provider.getBalance(
-        await DSponsorAdmin.recipient()
-      )
-
-      expect(balanceAfterCall).to.equal(balanceBeforeCall)
-    })
-
-    it('Should revert if encoded data is not valid', async function () {
-      await loadFixture(deployFixture)
-
-      const balanceBeforeCall = await provider.getBalance(
-        await DSponsorAdmin.recipient()
-      )
-      const fee = (valuePrice * BigInt(bps.toString())) / BigInt('10000')
-
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          DSponsorNFT,
-          callData(ZERO_ADDRESS, ZERO_ADDRESS),
-          ZERO_ADDRESS,
-          valuePrice,
-          referral,
-          { value: valuePrice + fee }
-        )
-      ).to.reverted
-      // ).to.revertedWithCustomError(DSponsorNFT, 'CannotBeZeroAddress')
-
-      const balanceAfterCall = await provider.getBalance(
-        await DSponsorAdmin.recipient()
-      )
-
-      expect(balanceAfterCall).to.equal(balanceBeforeCall)
-    })
-
-    it('Should revert if the call is reentrant', async function () {
-      await loadFixture(deployFixture)
-
-      const value = 1000
-      await expect(
-        DSponsorAdmin.connect(user).callWithProtocolFee(
-          ReentrantAddress,
-          Reentrant.interface.encodeFunctionData('dummy', [true]),
-          ZERO_ADDRESS,
-          value,
-          referral,
-          { value: value * 2 }
-        )
-      ).to.revertedWithCustomError(
-        DSponsorAdmin,
-        'ReentrancyGuardReentrantCall'
-      )
-
-      await DSponsorAdmin.connect(user).createOffer(ReentrantAddress, offerInit)
-      let offerId2 = offerId + 1
-      await expect(
-        DSponsorAdmin.connect(user).mintAndSubmit(
-          {
-            tokenId,
-            to: user2Addr,
-            currency: ZERO_ADDRESS,
-            tokenData,
-            offerId: offerId2,
-            adParameters,
-            adDatas,
-            referralAdditionalInformation
-          },
-          { value: value * 3 }
-        )
-      ).to.revertedWithCustomError(
-        DSponsorAdmin,
-        'ReentrancyGuardReentrantCall'
-      )
     })
   })
 
@@ -856,6 +412,510 @@ describe('DSponsorAdmin', function () {
           referralAdditionalInformation
         })
       ).to.revertedWithCustomError(DSponsorAdmin, 'NoAdDataSubmitted')
+    })
+
+    describe('Protocol fee', function () {
+      it('Should work with ERC20', async function () {
+        await loadFixture(deployFixture)
+
+        const fee = (ERC20Amount * BigInt(bps.toString())) / BigInt('10000')
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        )
+          .to.emit(DSponsorAdmin, 'CallWithProtocolFee')
+          .withArgs(
+            DSponsorNFTAddress,
+            ERC20MockAddress,
+            fee,
+            ownerAddr,
+            user2Addr,
+            referralAdditionalInformation
+          )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeTokenBalances(
+          ERC20Mock,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [(fee + ERC20Amount) * BigInt('-1'), 0, ERC20Amount, fee, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+      })
+
+      it('Should work with native currency', async function () {
+        await loadFixture(deployFixture)
+
+        const fee = (valuePrice * BigInt(bps.toString())) / BigInt('10000')
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: valuePrice + fee }
+          )
+        )
+          .to.emit(DSponsorAdmin, 'CallWithProtocolFee')
+          .withArgs(
+            DSponsorNFTAddress,
+            ZERO_ADDRESS,
+            fee,
+            ownerAddr,
+            user2Addr,
+            referralAdditionalInformation
+          )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: valuePrice + fee }
+          )
+        ).to.changeEtherBalances(
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [(fee + valuePrice) * BigInt('-1'), 0, valuePrice, fee, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: valuePrice + fee }
+          )
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+      })
+
+      it('Should work even with no amount', async function () {
+        await loadFixture(deployFixture)
+
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ZERO_ADDRESS,
+          true,
+          0
+        )
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ZERO_ADDRESS,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ZERO_ADDRESS,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeEtherBalances(
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 0, 0, 0, 0]
+        )
+      })
+
+      it('Should work even with low amount (no fee for treasury)', async function () {
+        await loadFixture(deployFixture)
+
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ERC20MockAddress,
+          true,
+          1
+        )
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ZERO_ADDRESS,
+          true,
+          1
+        )
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.changeTokenBalances(
+          ERC20Mock,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [-1, 0, 1, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: 1 }
+          )
+        ).to.changeEtherBalances(
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [-1, 0, 1, 0, 0]
+        )
+      })
+
+      it('Should work with a valid swap', async function () {
+        await loadFixture(deployFixture)
+
+        const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
+        const value = parseEther('1000')
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: USDCeAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: value }
+          )
+        ).to.changeTokenBalances(
+          USDCeContract,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 0, USDCePrice, fee, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: USDCeAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: value }
+          )
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: USDCeAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: value }
+          )
+        ).to.changeEtherBalances(
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [-value, 0, 0, 0, 0]
+        )
+      })
+
+      it('Should revert if value for the swap is too low', async function () {
+        await loadFixture(deployFixture)
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: USDCeAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: parseEther('0.01') }
+          )
+        ).to.reverted
+      })
+
+      it('Should revert if no path for the swap ', async function () {
+        await loadFixture(deployFixture)
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ERC20MockAddress,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: parseEther('0.01') }
+          )
+        ).to.reverted
+      })
+
+      it('Should revert if ERC20 Amount overflow', async function () {
+        await loadFixture(deployFixture)
+
+        const uint256Max = BigInt(
+          '115792089237316195423570985008687907853269984665640564039457584007913129639935'
+        )
+
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ERC20MockAddress,
+          true,
+          uint256Max
+        )
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.revertedWithPanic(0x11)
+      })
+
+      it('Should revert if not enough ERC20 allowance', async function () {
+        await loadFixture(deployFixture)
+
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ERC20MockAddress,
+          true,
+          ERC20Amount * BigInt('1000000000')
+        )
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientAllowance')
+      })
+
+      it('Should revert if not enough ERC20 tokens', async function () {
+        await loadFixture(deployFixture)
+
+        const newAmount = ERC20Amount * BigInt('1000000000')
+
+        await DSponsorNFT.connect(owner).setDefaultMintPrice(
+          ERC20MockAddress,
+          true,
+          newAmount
+        )
+
+        await ERC20Mock.connect(user).approve(
+          DSponsorAdminAddress,
+          newAmount * BigInt('100')
+        )
+        await ERC20Mock.mint(user, newAmount) // not enough as we need to pay the fee
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit({
+            tokenId,
+            to: user2Addr,
+            currency: ERC20MockAddress,
+            tokenData,
+            offerId,
+            adParameters,
+            adDatas,
+            referralAdditionalInformation
+          })
+        ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientBalance')
+
+        expect(
+          await ERC20Mock.balanceOf(await DSponsorAdmin.recipient())
+        ).to.equal(0)
+      })
+
+      it('Should revert is value is too low', async function () {
+        await loadFixture(deployFixture)
+
+        const balanceBeforeCall = await provider.getBalance(
+          await DSponsorAdmin.recipient()
+        )
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: valuePrice }
+          )
+        ).to.revertedWithCustomError(DSponsorAdmin, 'InsufficientFunds')
+
+        const balanceAfterCall = await provider.getBalance(
+          await DSponsorAdmin.recipient()
+        )
+
+        expect(balanceAfterCall).to.equal(balanceBeforeCall)
+      })
+
+      it('Should revert if the call is reentrant', async function () {
+        await loadFixture(deployFixture)
+
+        const value = 1000
+        await DSponsorAdmin.connect(user).createOffer(
+          ReentrantAddress,
+          offerInit
+        )
+        let offerId2 = offerId + 1
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: ZERO_ADDRESS,
+              tokenData,
+              offerId: offerId2,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value: value * 3 }
+          )
+        ).to.revertedWithCustomError(
+          DSponsorAdmin,
+          'ReentrancyGuardReentrantCall'
+        )
+      })
     })
   })
 

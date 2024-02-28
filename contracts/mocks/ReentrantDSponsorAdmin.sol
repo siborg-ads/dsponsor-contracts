@@ -6,15 +6,9 @@ import "../interfaces/IDSponsorNFT.sol";
 import "../DSponsorAdmin.sol";
 
 contract ReentrantDSponsorAdmin is Reentrancy {
-    uint256 public constant tokenId = 10;
+    uint256 tokenId = 0;
 
     bool public pwed = false;
-
-    function dummy(bool _pwed) public payable {
-        // slither-disable-next-line reentrancy-benign
-        _executeAttack();
-        pwed = _pwed;
-    }
 
     function getMintPrice(
         uint256,
@@ -37,30 +31,29 @@ contract ReentrantDSponsorAdmin is Reentrancy {
         if (reentrancyStage != State.ATTACK) {
             address currency = address(0);
             uint256 baseAmount = 0;
-            ProtocolFee.ReferralRevenue memory referral = IProtocolFee
-                .ReferralRevenue({
-                    enabler: address(this),
-                    spender: address(this),
-                    additionalInformation: "none"
-                });
-
-            bytes memory callData = abi.encodeWithSignature(
-                "dummy(bool)",
-                true
-            );
 
             reentrancyStage = State.ATTACK;
+
+            tokenId++;
+            string[] memory adParameters = new string[](1);
+            adParameters[0] = "adParameters";
+            string[] memory adDatas = new string[](1);
+            adDatas[0] = "adDatas";
+
+            DSponsorAdmin.MintAndSubmitAdParams memory args = DSponsorAdmin
+                .MintAndSubmitAdParams(
+                    tokenId,
+                    address(this), // to
+                    currency,
+                    "tokenData",
+                    baseAmount,
+                    adParameters,
+                    adDatas,
+                    ""
+                );
 
             // slither-disable-next-line reentrancy-eth
-            DSponsorAdmin(msg.sender).callWithProtocolFee{value: msg.value}(
-                address(this),
-                callData,
-                currency,
-                baseAmount,
-                referral
-            );
-
-            reentrancyStage = State.ATTACK;
+            DSponsorAdmin(msg.sender).mintAndSubmit{value: msg.value}(args);
         }
     }
 
