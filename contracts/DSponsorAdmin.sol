@@ -57,6 +57,8 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
         IDSponsorNFT.InitParams memory nftParams,
         OfferInitParams calldata offerParams
     ) external {
+        // force the allowed minter to be the DSponsorAdmin contract
+        nftParams.minter = address(this);
         address newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams);
         createOffer(IERC721(newDSponsorNFT), offerParams);
     }

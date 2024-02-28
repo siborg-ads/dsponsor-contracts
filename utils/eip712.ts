@@ -1,6 +1,5 @@
-import { ethers, upgrades } from 'hardhat'
 import { ERC2771Forwarder } from '../typechain-types'
-import { Contract, BaseContract, Signer, TypedDataDomain } from 'ethers'
+import { BaseContract, Signer, TypedDataDomain } from 'ethers'
 
 type TypedDataNameEIP712 =
   | 'name'

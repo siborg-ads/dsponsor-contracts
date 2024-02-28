@@ -140,7 +140,7 @@ interface IDSponsorAgreements {
         OfferOptions calldata removeOptions
     ) external;
 
-    function validateAdProposal(
+    function reviewAdProposal(
         uint256 offerId,
         uint256 tokenId,
         uint256 proposalId,

@@ -29,6 +29,9 @@ contract DSponsorNFT is
     using SafeERC20 for IERC20;
     using Strings for uint256;
 
+    // Counter for the number of tokens minted so far.
+    uint256 public totalSupply;
+
     // Maximum number of NFTs that can be minted, set at initialization and immutable thereafter.
     uint256 public MAX_SUPPLY;
 
@@ -38,17 +41,17 @@ contract DSponsorNFT is
     // Contract-level metadata URI for platforms like OpenSea.
     string public contractURI;
 
-    // Counter for the number of tokens minted so far.
-    uint256 public totalSupply;
-
-    // Mapping to store custom URIs for individual tokens, if set.
-    mapping(uint256 => string) public tokenURIs;
+    // Restrict mint to deployer (expect to be DSponsorAdmin address)
+    address public MINTER;
 
     // Whether minting is allowed for a specific list of tokenIds or not
     bool public applyTokensAllowlist;
 
     // Mapping to store allowed tokenIds to mint
     mapping(uint256 => bool) private allowedTokenIds;
+
+    // Mapping to store custom URIs for individual tokens, if set.
+    mapping(uint256 => string) public tokenURIs;
 
     // Mapping to store default minting price settings for each ERC20 token.
     mapping(IERC20 => MintPriceSettings) private _defaultMintERC20Prices;
@@ -70,6 +73,7 @@ contract DSponsorNFT is
      * @param params.symbol ERC721 symbol
      * @param params.baseURI Base URI for token metadata
      * @param params.contractURI URL for the collection-level metadata, as specified by ERC-7572.
+     * @param params.minter Address allowed to mint tokens
      * @param params.maxSupply The max number of mintable ERC721 tokens. Cannot be modified after deployment.
      * @param params.forwarder EIP2771 forwarder address, for gasless transactions
      * @param params.initialOwner Admin address to set prices,  base uris and more. Receives royalties.
@@ -95,6 +99,9 @@ contract DSponsorNFT is
         _setBaseURI(params.baseURI);
         _setContractURI(params.contractURI);
         MAX_SUPPLY = params.maxSupply;
+
+        // Restrict mint to a minter address
+        MINTER = params.minter;
 
         _setDefaultRoyalty(params.initialOwner, params.royaltyBps);
 
@@ -149,8 +156,12 @@ contract DSponsorNFT is
         }
         uint256 paidAmount = 0;
 
-        // if sender is the owner, he does not need to pay
+        // if sender is the owner, sender can mint and does not need to pay
         if (_msgSender() != owner()) {
+            if (_msgSender() != MINTER) {
+                revert UnauthorizedToMint();
+            }
+
             (bool enabled, uint256 amount) = getMintPrice(tokenId, currency);
 
             if (!enabled) {

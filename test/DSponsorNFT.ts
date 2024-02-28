@@ -118,6 +118,7 @@ describe('DSponsorNFT', function () {
       baseURI: 'baseURI',
       contractURI: 'contractURI',
       maxSupply: BigInt('5'),
+      minter: userAddr,
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 400, // 4%
@@ -231,7 +232,8 @@ describe('DSponsorNFT', function () {
       const event = receipt?.logs
         .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
         .find((e) => e?.name === 'NewDSponsorNFT')
-      expect(event?.args?.[7]).to.equal(ZERO_ADDRESS)
+
+      expect(event?.args?.[8]).to.equal(ZERO_ADDRESS)
     })
 
     it('Should fail if initialize with invalid arguments', async function () {
@@ -346,7 +348,7 @@ describe('DSponsorNFT', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorNFT.connect(user2).mint(
+        DSponsorNFT.connect(user).mint(
           tokenId,
           user2Addr,
           ZERO_ADDRESS,
@@ -354,12 +356,12 @@ describe('DSponsorNFT', function () {
           { value }
         )
       ).to.changeEtherBalances(
-        [user2Addr, ownerAddr],
+        [userAddr, ownerAddr],
         [parseEther(`-${etherValue}`), value]
       )
 
       await expect(
-        DSponsorNFT.connect(user2).mint(
+        DSponsorNFT.connect(user).mint(
           tokenId + 1,
           user2Addr,
           ZERO_ADDRESS,
@@ -389,7 +391,7 @@ describe('DSponsorNFT', function () {
       )
 
       await expect(
-        DSponsorNFT.connect(user2).mint(
+        DSponsorNFT.connect(user).mint(
           tokenId,
           user2Addr,
           ZERO_ADDRESS,
@@ -397,10 +399,10 @@ describe('DSponsorNFT', function () {
         )
       )
         .to.emit(DSponsorNFT, 'Mint')
-        .withArgs(tokenId, user2Addr, user2Addr, ZERO_ADDRESS, 0, tokenData)
+        .withArgs(tokenId, userAddr, user2Addr, ZERO_ADDRESS, 0, tokenData)
 
       await expect(
-        DSponsorNFT.connect(user2).mint(
+        DSponsorNFT.connect(user).mint(
           tokenId + 1,
           user2Addr,
           ERC20MockAddress,
@@ -410,7 +412,7 @@ describe('DSponsorNFT', function () {
         .to.emit(DSponsorNFT, 'Mint')
         .withArgs(
           tokenId + 1,
-          user2Addr,
+          userAddr,
           user2Addr,
           ERC20MockAddress,
           0, // ERC20Amount,
@@ -431,35 +433,13 @@ describe('DSponsorNFT', function () {
       )
 
       await expect(
-        DSponsorNFT.connect(user2).mint(
+        DSponsorNFT.connect(user).mint(
           tokenId + 55,
           user2,
           ZERO_ADDRESS,
           tokenData
         )
-      ).to.changeEtherBalances([user2Addr, ownerAddr], [0, 0])
-    })
-
-    it('Should allow owner to mint for free', async function () {
-      await loadFixture(deployFixture)
-
-      await expect(
-        DSponsorNFT.connect(owner).mint(
-          tokenId,
-          user2Addr,
-          ERC20Mock2Address,
-          tokenData
-        )
-      )
-        .to.emit(DSponsorNFT, 'Mint')
-        .withArgs(
-          tokenId,
-          owner,
-          user2Addr,
-          ERC20Mock2Address,
-          0, // amount,
-          tokenData
-        )
+      ).to.changeEtherBalances([userAddr, ownerAddr], [0, 0])
     })
 
     it('Should allow to mint from input data', async function () {
@@ -603,6 +583,41 @@ describe('DSponsorNFT', function () {
       await expect(
         DSponsorNFT.connect(owner).setTokensAreAllowed([tokenId], [true, false])
       ).to.be.revertedWithCustomError(DSponsorNFT, 'InvalidInputLengths')
+    })
+
+    it('Should allow owner to mint for free', async function () {
+      await loadFixture(deployFixture)
+
+      await expect(
+        DSponsorNFT.connect(owner).mint(
+          tokenId,
+          user2Addr,
+          ERC20Mock2Address,
+          tokenData
+        )
+      )
+        .to.emit(DSponsorNFT, 'Mint')
+        .withArgs(
+          tokenId,
+          owner,
+          user2Addr,
+          ERC20Mock2Address,
+          0, // amount,
+          tokenData
+        )
+    })
+
+    it('Should revert is not owner nor minter', async function () {
+      await loadFixture(deployFixture)
+
+      await expect(
+        DSponsorNFT.connect(user2).mint(
+          tokenId,
+          user2Addr,
+          ERC20Mock2Address,
+          tokenData
+        )
+      ).to.be.revertedWithCustomError(DSponsorNFT, 'UnauthorizedToMint')
     })
 
     it('Should revert if not enough available amount to spend', async function () {

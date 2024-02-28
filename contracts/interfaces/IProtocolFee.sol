@@ -30,12 +30,4 @@ interface IProtocolFee {
     function bps() external view returns (uint96);
 
     function recipient() external view returns (address);
-
-    function callWithProtocolFee(
-        address target,
-        bytes memory callData,
-        address currency,
-        uint256 baseAmount,
-        ReferralRevenue memory referral
-    ) external payable returns (bytes memory);
 }

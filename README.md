@@ -37,9 +37,9 @@ Although any ERC721 compliant contract is compatible with d>sponsor protocol, th
 
 ### Polygon Mumbai testnet
 
-* `DSponsorAdmin` contract is deployed to: [`0xE3aE42A640C0C00F8e0cB6C3B1Df50a0b45d6B44`](https://mumbai.polygonscan.com/address/0xE3aE42A640C0C00F8e0cB6C3B1Df50a0b45d6B44)
+* `DSponsorAdmin` contract is deployed to: [`0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3`](https://mumbai.polygonscan.com/address/0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3)
 
-* An exemple of `DSponsorNFT` deployed: [`0x57a57e75CeD4F24c19D635a211c76933fb8EAe06`](https://mumbai.polygonscan.com/address/0x57a57e75CeD4F24c19D635a211c76933fb8EAe06)
+* An exemple of `DSponsorNFT` deployed: [`0x8C4115060A52DD8693521095f6f150D3F2aaFa53`](https://mumbai.polygonscan.com/address/0x8C4115060A52DD8693521095f6f150D3F2aaFa53)
 
 ## Development
 
