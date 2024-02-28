@@ -116,6 +116,7 @@ describe('DSponsorAgreements', function () {
       baseURI: 'baseURI',
       contractURI: 'contractURI',
       maxSupply: BigInt('5'),
+      minter: userAddr,
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 400, // 4%

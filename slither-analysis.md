@@ -15,16 +15,16 @@ Summary
  - [solc-version](#solc-version) (62 results) (Informational)
  - [low-level-calls](#low-level-calls) (5 results) (Informational)
  - [missing-inheritance](#missing-inheritance) (1 results) (Informational)
- - [naming-convention](#naming-convention) (38 results) (Informational)
+ - [naming-convention](#naming-convention) (39 results) (Informational)
  - [similar-names](#similar-names) (2 results) (Informational)
  - [too-many-digits](#too-many-digits) (3 results) (Informational)
 ## reentrancy-eth
 Impact: High
 Confidence: Medium
  - [ ] ID-0
-Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)](contracts/DSponsorAdmin.sol#L77-L130):
+Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)](contracts/DSponsorAdmin.sol#L79-L132):
 	External calls:
-	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
+	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L115-L121)
 		- [returndata = address(token).functionCall(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L96)
 		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success,returndata) = address(token).call(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L115)
@@ -37,12 +37,12 @@ Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)]
 		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L91)
 		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L101-L105)
 	External calls sending eth:
-	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
+	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L115-L121)
 		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
 	State variables written after the call(s):
-	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L123-L128)
+	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L125-L130)
 		- [_sponsoringOffers[offerId].proposals[tokenId][_hashString(adParameter)].lastSubmitted = _proposalCounterId](contracts/DSponsorAgreements.sol#L332-L334)
 	[DSponsorAgreements._sponsoringOffers](contracts/DSponsorAgreements.sol#L24) can be used in cross function reentrancies:
 	- [DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L316-L343)
@@ -63,7 +63,7 @@ Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)]
 	- [DSponsorAgreements.onlyValidator(uint256)](contracts/DSponsorAgreements.sol#L78-L86)
 	- [DSponsorAgreements.reviewAdProposal(uint256,uint256,uint256,string,bool,string)](contracts/DSponsorAgreements.sol#L210-L248)
 
-contracts/DSponsorAdmin.sol#L77-L130
+contracts/DSponsorAdmin.sol#L79-L132
 
 
 ## divide-before-multiply
@@ -181,10 +181,10 @@ contracts/lib/ERC4907Upgradeable.sol#L22
 
 
  - [ ] ID-15
-[DSponsorNFT.setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L231) shadows:
+[DSponsorNFT.setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L242) shadows:
 	- [ERC721Upgradeable._baseURI()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L122-L124) (function)
 
-contracts/DSponsorNFT.sol#L231
+contracts/DSponsorNFT.sol#L242
 
 
  - [ ] ID-16
@@ -196,19 +196,36 @@ contracts/lib/ERC4907Upgradeable.sol#L21
 
 
  - [ ] ID-17
-[DSponsorNFT._setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L506) shadows:
+[DSponsorNFT._setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L517) shadows:
 	- [ERC721Upgradeable._baseURI()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L122-L124) (function)
 
-contracts/DSponsorNFT.sol#L506
+contracts/DSponsorNFT.sol#L517
 
 
 ## reentrancy-benign
 Impact: Low
 Confidence: Medium
  - [ ] ID-18
-Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)](contracts/DSponsorAdmin.sol#L77-L130):
+Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L64):
 	External calls:
-	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
+	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L62)
+	State variables written after the call(s):
+	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
+		- [_offerCountId ++](contracts/DSponsorAgreements.sol#L126)
+	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
+		- [_sponsoringOffers[offerId].disabled = disable](contracts/DSponsorAgreements.sol#L351)
+		- [_sponsoringOffers[offerId].validators[validators[i]] = enable](contracts/DSponsorAgreements.sol#L396)
+		- [_sponsoringOffers[offerId].adParameters[_hashString(adParameters[i])] = enable](contracts/DSponsorAgreements.sol#L369-L371)
+		- [_sponsoringOffers[offerId].admins[admins[i]] = enable](contracts/DSponsorAgreements.sol#L385)
+		- [_sponsoringOffers[_offerCountId].nftContract = nftContract](contracts/DSponsorAgreements.sol#L128)
+
+contracts/DSponsorAdmin.sol#L56-L64
+
+
+ - [ ] ID-19
+Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)](contracts/DSponsorAdmin.sol#L79-L132):
+	External calls:
+	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L115-L121)
 		- [returndata = address(token).functionCall(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L96)
 		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success,returndata) = address(token).call(data)](node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#L115)
@@ -221,45 +238,28 @@ Reentrancy in [DSponsorAdmin.mintAndSubmit(DSponsorAdmin.MintAndSubmitAdParams)]
 		- [IERC20(currency).forceApprove(address(target),baseAmount)](contracts/lib/ProtocolFee.sol#L91)
 		- [retData = Address.functionCallWithValue(target,callData,value)](contracts/lib/ProtocolFee.sol#L101-L105)
 	External calls sending eth:
-	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L113-L119)
+	- [_callWithProtocolFee(address(contractAddr),mintCallData,params.currency,mintPrice,referral)](contracts/DSponsorAdmin.sol#L115-L121)
 		- [amountOut = swapRouter.exactOutputSingle{value: msg.value}(params)](contracts/lib/ProtocolFee.sol#L143)
 		- [(success) = recipient.call{value: amount}()](node_modules/@openzeppelin/contracts/utils/Address.sol#L46)
 		- [(success,returndata) = target.call{value: value}(data)](node_modules/@openzeppelin/contracts/utils/Address.sol#L87)
 	State variables written after the call(s):
-	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L123-L128)
+	- [_submitAdProposal(params.offerId,params.tokenId,params.adParameters[i],params.adDatas[i])](contracts/DSponsorAdmin.sol#L125-L130)
 		- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L330)
 
-contracts/DSponsorAdmin.sol#L77-L130
-
-
- - [ ] ID-19
-Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L62):
-	External calls:
-	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L60)
-	State variables written after the call(s):
-	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-		- [_offerCountId ++](contracts/DSponsorAgreements.sol#L126)
-	- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
-		- [_sponsoringOffers[offerId].disabled = disable](contracts/DSponsorAgreements.sol#L351)
-		- [_sponsoringOffers[offerId].adParameters[_hashString(adParameters[i])] = enable](contracts/DSponsorAgreements.sol#L369-L371)
-		- [_sponsoringOffers[offerId].validators[validators[i]] = enable](contracts/DSponsorAgreements.sol#L396)
-		- [_sponsoringOffers[offerId].admins[admins[i]] = enable](contracts/DSponsorAgreements.sol#L385)
-		- [_sponsoringOffers[_offerCountId].nftContract = nftContract](contracts/DSponsorAgreements.sol#L128)
-
-contracts/DSponsorAdmin.sol#L56-L62
+contracts/DSponsorAdmin.sol#L79-L132
 
 
 ## reentrancy-events
 Impact: Low
 Confidence: Medium
  - [ ] ID-20
-Reentrancy in [DSponsorNFTFactory.createDSponsorNFT(IDSponsorNFTBase.InitParams)](contracts/DSponsorNFTFactory.sol#L37-L58):
+Reentrancy in [DSponsorNFTFactory.createDSponsorNFT(IDSponsorNFTBase.InitParams)](contracts/DSponsorNFTFactory.sol#L38-L60):
 	External calls:
-	- [DSponsorNFT(instance).initialize(params)](contracts/DSponsorNFTFactory.sol#L41)
+	- [DSponsorNFT(instance).initialize(params)](contracts/DSponsorNFTFactory.sol#L42)
 	Event emitted after the call(s):
-	- [NewDSponsorNFT(instance,params.initialOwner,params.name,params.symbol,params.baseURI,params.contractURI,params.maxSupply,params.forwarder,params.royaltyBps,params.currencies,params.prices,params.allowedTokenIds)](contracts/DSponsorNFTFactory.sol#L43-L56)
+	- [NewDSponsorNFT(instance,params.initialOwner,params.name,params.symbol,params.baseURI,params.contractURI,params.minter,params.maxSupply,params.forwarder,params.royaltyBps,params.currencies,params.prices,params.allowedTokenIds)](contracts/DSponsorNFTFactory.sol#L44-L58)
 
-contracts/DSponsorNFTFactory.sol#L37-L58
+contracts/DSponsorNFTFactory.sol#L38-L60
 
 
  - [ ] ID-21
@@ -283,20 +283,20 @@ contracts/lib/ProtocolFee.sol#L56-L117
 
 
  - [ ] ID-22
-Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L62):
+Reentrancy in [DSponsorAdmin.createDSponsorNFTAndOffer(IDSponsorNFTBase.InitParams,IDSponsorAgreements.OfferInitParams)](contracts/DSponsorAdmin.sol#L56-L64):
 	External calls:
-	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L60)
+	- [newDSponsorNFT = nftFactory.createDSponsorNFT(nftParams)](contracts/DSponsorAdmin.sol#L62)
 	Event emitted after the call(s):
 	- [UpdateOffer(offerId,disable,name,rulesURI,_sponsoringOffers[offerId].nftContract)](contracts/DSponsorAgreements.sol#L354-L360)
-		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
+		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
 	- [UpdateOfferAdParameter(offerId,adParameters[i],enable)](contracts/DSponsorAgreements.sol#L372)
-		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
+		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
 	- [UpdateOfferAdmin(offerId,admins[i],enable)](contracts/DSponsorAgreements.sol#L386)
-		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
+		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
 	- [UpdateOfferValidator(offerId,validators[i],enable)](contracts/DSponsorAgreements.sol#L397)
-		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L61)
+		- [createOffer(IERC721(newDSponsorNFT),offerParams)](contracts/DSponsorAdmin.sol#L63)
 
-contracts/DSponsorAdmin.sol#L56-L62
+contracts/DSponsorAdmin.sol#L56-L64
 
 
 ## timestamp
@@ -612,26 +612,26 @@ node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallba
 Impact: Informational
 Confidence: Medium
  - [ ] ID-56
+[DSponsorNFT._setDefaultMintPrice(address,bool,uint256)](contracts/DSponsorNFT.sol#L526-L541) has costly operations inside a loop:
+	- [_defaultMintNativePrice = MintPriceSettings(enabled,amount)](contracts/DSponsorNFT.sol#L537)
+
+contracts/DSponsorNFT.sol#L526-L541
+
+
+ - [ ] ID-57
 [DSponsorAgreements._submitAdProposal(uint256,uint256,string,string)](contracts/DSponsorAgreements.sol#L316-L343) has costly operations inside a loop:
 	- [_proposalCounterId ++](contracts/DSponsorAgreements.sol#L330)
 
 contracts/DSponsorAgreements.sol#L316-L343
 
 
- - [ ] ID-57
-[DSponsorNFT._setDefaultMintPrice(address,bool,uint256)](contracts/DSponsorNFT.sol#L515-L530) has costly operations inside a loop:
-	- [_defaultMintNativePrice = MintPriceSettings(enabled,amount)](contracts/DSponsorNFT.sol#L526)
-
-contracts/DSponsorNFT.sol#L515-L530
-
-
 ## dead-code
 Impact: Informational
 Confidence: Medium
  - [ ] ID-58
-[DSponsorNFT._msgData()](contracts/DSponsorNFT.sol#L440-L448) is never used and should be removed
+[DSponsorNFT._msgData()](contracts/DSponsorNFT.sol#L451-L459) is never used and should be removed
 
-contracts/DSponsorNFT.sol#L440-L448
+contracts/DSponsorNFT.sol#L451-L459
 
 
  - [ ] ID-59
@@ -659,9 +659,9 @@ contracts/lib/ERC2771ContextUpgradeable.sol#L20-L27
 
 
  - [ ] ID-63
-[DSponsorAdmin._msgData()](contracts/DSponsorAdmin.sol#L149-L157) is never used and should be removed
+[DSponsorAdmin._msgData()](contracts/DSponsorAdmin.sol#L151-L159) is never used and should be removed
 
-contracts/DSponsorAdmin.sol#L149-L157
+contracts/DSponsorAdmin.sol#L151-L159
 
 
  - [ ] ID-64
@@ -1084,18 +1084,18 @@ node_modules/@openzeppelin/contracts/utils/Address.sol#L41-L50
 Impact: Informational
 Confidence: High
  - [ ] ID-132
-[DSponsorNFT](contracts/DSponsorNFT.sol#L21-L562) should inherit from [IDSponsorNFT](contracts/interfaces/IDSponsorNFT.sol#L158)
+[DSponsorNFT](contracts/DSponsorNFT.sol#L21-L573) should inherit from [IDSponsorNFT](contracts/interfaces/IDSponsorNFT.sol#L161)
 
-contracts/DSponsorNFT.sol#L21-L562
+contracts/DSponsorNFT.sol#L21-L573
 
 
 ## naming-convention
 Impact: Informational
 Confidence: High
  - [ ] ID-133
-Function [IDSponsorNFTBase.MAX_SUPPLY()](contracts/interfaces/IDSponsorNFT.sol#L97) is not in mixedCase
+Function [IDSponsorNFTBase.MAX_SUPPLY()](contracts/interfaces/IDSponsorNFT.sol#L100) is not in mixedCase
 
-contracts/interfaces/IDSponsorNFT.sol#L97
+contracts/interfaces/IDSponsorNFT.sol#L100
 
 
  - [ ] ID-134
@@ -1147,9 +1147,9 @@ node_modules/@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable
 
 
  - [ ] ID-142
-Parameter [DSponsorAdmin.updateProtocolFee(address,uint96)._recipient](contracts/DSponsorAdmin.sol#L133) is not in mixedCase
+Parameter [DSponsorAdmin.updateProtocolFee(address,uint96)._recipient](contracts/DSponsorAdmin.sol#L135) is not in mixedCase
 
-contracts/DSponsorAdmin.sol#L133
+contracts/DSponsorAdmin.sol#L135
 
 
  - [ ] ID-143
@@ -1159,9 +1159,9 @@ node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.
 
 
  - [ ] ID-144
-Parameter [DSponsorNFT.setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L231) is not in mixedCase
+Parameter [DSponsorNFT.setBaseURI(string)._baseURI](contracts/DSponsorNFT.sol#L242) is not in mixedCase
 
-contracts/DSponsorNFT.sol#L231
+contracts/DSponsorNFT.sol#L242
 
 
  - [ ] ID-145
@@ -1201,9 +1201,9 @@ node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol#L89
 
 
  - [ ] ID-151
-Parameter [IDSponsorNFTBase.setBaseURI(string).URI](contracts/interfaces/IDSponsorNFT.sol#L118) is not in mixedCase
+Parameter [IDSponsorNFTBase.setBaseURI(string).URI](contracts/interfaces/IDSponsorNFT.sol#L121) is not in mixedCase
 
-contracts/interfaces/IDSponsorNFT.sol#L118
+contracts/interfaces/IDSponsorNFT.sol#L121
 
 
  - [ ] ID-152
@@ -1213,9 +1213,9 @@ node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.
 
 
  - [ ] ID-153
-Parameter [DSponsorNFT.setContractURI(string)._contractURI](contracts/DSponsorNFT.sol#L244) is not in mixedCase
+Parameter [DSponsorNFT.setContractURI(string)._contractURI](contracts/DSponsorNFT.sol#L255) is not in mixedCase
 
-contracts/DSponsorNFT.sol#L244
+contracts/DSponsorNFT.sol#L255
 
 
  - [ ] ID-154
@@ -1225,21 +1225,21 @@ contracts/lib/ERC4907Upgradeable.sol#L20-L26
 
 
  - [ ] ID-155
-Parameter [DSponsorNFT.setTokensAllowlist(bool)._applyTokensAllowlist](contracts/DSponsorNFT.sol#L298) is not in mixedCase
+Parameter [DSponsorNFT.setTokensAllowlist(bool)._applyTokensAllowlist](contracts/DSponsorNFT.sol#L309) is not in mixedCase
 
-contracts/DSponsorNFT.sol#L298
+contracts/DSponsorNFT.sol#L309
 
 
  - [ ] ID-156
-Variable [DSponsorNFT.MAX_SUPPLY](contracts/DSponsorNFT.sol#L33) is not in mixedCase
+Variable [DSponsorNFT.MAX_SUPPLY](contracts/DSponsorNFT.sol#L36) is not in mixedCase
 
-contracts/DSponsorNFT.sol#L33
+contracts/DSponsorNFT.sol#L36
 
 
  - [ ] ID-157
-Parameter [DSponsorNFT.setTokenURI(uint256,string)._tokenURI](contracts/DSponsorNFT.sol#L330) is not in mixedCase
+Parameter [DSponsorNFT.setTokenURI(uint256,string)._tokenURI](contracts/DSponsorNFT.sol#L341) is not in mixedCase
 
-contracts/DSponsorNFT.sol#L330
+contracts/DSponsorNFT.sol#L341
 
 
  - [ ] ID-158
@@ -1261,9 +1261,9 @@ node_modules/@openzeppelin/contracts/utils/cryptography/EIP712.sol#L146-L148
 
 
  - [ ] ID-161
-Parameter [IDSponsorNFTBase.setTokenURI(uint256,string).URI](contracts/interfaces/IDSponsorNFT.sol#L144) is not in mixedCase
+Parameter [IDSponsorNFTBase.setTokenURI(uint256,string).URI](contracts/interfaces/IDSponsorNFT.sol#L147) is not in mixedCase
 
-contracts/interfaces/IDSponsorNFT.sol#L144
+contracts/interfaces/IDSponsorNFT.sol#L147
 
 
  - [ ] ID-162
@@ -1273,48 +1273,54 @@ node_modules/@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable
 
 
  - [ ] ID-163
+Variable [DSponsorNFT.MINTER](contracts/DSponsorNFT.sol#L45) is not in mixedCase
+
+contracts/DSponsorNFT.sol#L45
+
+
+ - [ ] ID-164
 Function [ContextUpgradeable.__Context_init()](node_modules/@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol#L18-L19) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol#L18-L19
 
 
- - [ ] ID-164
-Parameter [DSponsorAdmin.updateProtocolFee(address,uint96)._bps](contracts/DSponsorAdmin.sol#L134) is not in mixedCase
-
-contracts/DSponsorAdmin.sol#L134
-
-
  - [ ] ID-165
+Parameter [DSponsorAdmin.updateProtocolFee(address,uint96)._bps](contracts/DSponsorAdmin.sol#L136) is not in mixedCase
+
+contracts/DSponsorAdmin.sol#L136
+
+
+ - [ ] ID-166
 Function [ERC165Upgradeable.__ERC165_init()](node_modules/@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol#L22-L23) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol#L22-L23
 
 
- - [ ] ID-166
+ - [ ] ID-167
 Function [ERC2771ContextUpgradeable.__ERC2771Context_init_unchained(address)](contracts/lib/ERC2771ContextUpgradeable.sol#L29-L33) is not in mixedCase
 
 contracts/lib/ERC2771ContextUpgradeable.sol#L29-L33
 
 
- - [ ] ID-167
+ - [ ] ID-168
 Function [ERC721RoyaltyUpgradeable.__ERC721Royalty_init()](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol#L22-L23) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol#L22-L23
 
 
- - [ ] ID-168
+ - [ ] ID-169
 Function [ERC2981Upgradeable.__ERC2981_init_unchained()](node_modules/@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol#L68-L69) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol#L68-L69
 
 
- - [ ] ID-169
-Parameter [IDSponsorNFTBase.setContractURI(string).URI](contracts/interfaces/IDSponsorNFT.sol#L120) is not in mixedCase
-
-contracts/interfaces/IDSponsorNFT.sol#L120
-
-
  - [ ] ID-170
+Parameter [IDSponsorNFTBase.setContractURI(string).URI](contracts/interfaces/IDSponsorNFT.sol#L123) is not in mixedCase
+
+contracts/interfaces/IDSponsorNFT.sol#L123
+
+
+ - [ ] ID-171
 Function [ERC721Upgradeable.__ERC721_init(string,string)](node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L53-L55) is not in mixedCase
 
 node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol#L53-L55
@@ -1323,13 +1329,13 @@ node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.
 ## similar-names
 Impact: Informational
 Confidence: Medium
- - [ ] ID-171
+ - [ ] ID-172
 Variable [IUniswapV3SwapCallback.uniswapV3SwapCallback(int256,int256,bytes).amount0Delta](node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L17) is too similar to [IUniswapV3SwapCallback.uniswapV3SwapCallback(int256,int256,bytes).amount1Delta](node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L18)
 
 node_modules/@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol#L17
 
 
- - [ ] ID-172
+ - [ ] ID-173
 Variable [ERC2771Context._trustedForwarder](node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23) is too similar to [ERC2771Context.constructor(address).trustedForwarder_](node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L32)
 
 node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23
@@ -1338,21 +1344,21 @@ node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol#L23
 ## too-many-digits
 Impact: Informational
 Confidence: Medium
- - [ ] ID-173
+ - [ ] ID-174
 [Clones.clone(address)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L28-L41) uses literals with too many digits:
 	- [mstore(uint256,uint256)(0x00,implementation << 0x60 >> 0xe8 | 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L33)
 
 node_modules/@openzeppelin/contracts/proxy/Clones.sol#L28-L41
 
 
- - [ ] ID-174
+ - [ ] ID-175
 [ShortStrings.slitherConstructorConstantVariables()](node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L40-L123) uses literals with too many digits:
 	- [FALLBACK_SENTINEL = 0x00000000000000000000000000000000000000000000000000000000000000FF](node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L42)
 
 node_modules/@openzeppelin/contracts/utils/ShortStrings.sol#L40-L123
 
 
- - [ ] ID-175
+ - [ ] ID-176
 [Clones.cloneDeterministic(address,bytes32)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L50-L63) uses literals with too many digits:
 	- [mstore(uint256,uint256)(0x00,implementation << 0x60 >> 0xe8 | 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000)](node_modules/@openzeppelin/contracts/proxy/Clones.sol#L55)
 

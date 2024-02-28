@@ -114,6 +114,7 @@ describe('DSponsorAdmin', function () {
       symbol: 'DSNFT',
       baseURI: 'baseURI',
       contractURI: 'contractURI',
+      minter: deployerAddr, // will be replaced by the DSponsorAdmin address
       maxSupply: BigInt('5'),
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
@@ -122,17 +123,6 @@ describe('DSponsorAdmin', function () {
       prices: [ERC20Amount, valuePrice, USDCePrice],
       allowedTokenIds: []
     }
-
-    const tx = await DSponsorNFTFactory.createDSponsorNFT(initDSponsorNFTParams)
-    if (!tx.hash) throw new Error('No tx hash')
-    const receipt = await provider.getTransactionReceipt(tx.hash || '')
-    const event = receipt?.logs
-      .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
-      .find((e) => e?.name === 'NewDSponsorNFT')
-    if (!event) throw new Error('No event')
-
-    DSponsorNFTAddress = event.args[0]
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
 
     DSponsorAdmin = await ethers.deployContract('DSponsorAdmin', [
       DSponsorNFTFactoryAddress,
@@ -156,7 +146,19 @@ describe('DSponsorAdmin', function () {
       options: offerOptions
     }
 
-    await DSponsorAdmin.connect(user).createOffer(DSponsorNFTAddress, offerInit)
+    const tx = await DSponsorAdmin.connect(user).createDSponsorNFTAndOffer(
+      initDSponsorNFTParams,
+      offerInit
+    )
+    if (!tx.hash) throw new Error('No tx hash')
+    const receipt = await provider.getTransactionReceipt(tx.hash || '')
+    const event = receipt?.logs
+      .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
+      .find((e) => e?.name === 'NewDSponsorNFT')
+    if (!event) throw new Error('No event')
+
+    DSponsorNFTAddress = event.args[0]
+    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
 
     await ERC20Mock.connect(user).approve(
       DSponsorAdminAddress,

@@ -20,6 +20,8 @@ interface IDSponsorNFTBase {
         string baseURI;
         /// @notice URI linking to the contract metadata
         string contractURI;
+        /// @notice Restrict mint to deployer (expect to be DSponsorAdmin address)
+        address minter;
         /// @notice Immutable maximum supply of tokens
         uint256 maxSupply;
         /// @notice Address of the forwarder contract (EIP-2771)
@@ -56,6 +58,7 @@ interface IDSponsorNFTBase {
     error InvalidPricingStructure(address[] currencies, uint256[] prices);
     error MaxSupplyExceeded();
     error MaxSupplyShouldBeGreaterThan0();
+    error UnauthorizedToMint();
     error TokenNotAllowed(uint256 tokenId);
 
     /* ****************
