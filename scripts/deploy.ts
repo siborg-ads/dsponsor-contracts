@@ -51,19 +51,6 @@ async function deploy() {
   const DSponsorAdminAddress = await DSponsorAdmin.getAddress()
   console.log('DSponsorAdmin deployed to:', DSponsorAdminAddress)
 
-  await run('verify:verify', {
-    address: DSponsorNFTImplementationAddress,
-    constructorArguments: []
-  })
-  await run('verify:verify', {
-    address: DSponsorNFTFactoryAddress,
-    constructorArguments: [DSponsorNFTImplementationAddress]
-  })
-  await run('verify:verify', {
-    address: DSponsorAdminAddress,
-    constructorArguments: DSponsorAdminArgs
-  })
-
   const ERC20Addr = '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa' // WETH mumbai,
   // pool uniV3 testnet 0,02297 WETH per MATIC / 43,5329 MATIC per WETH
 
@@ -93,6 +80,7 @@ async function deploy() {
     baseURI: contractURI,
     contractURI,
     maxSupply: 50,
+    minter: deployerAddr, // will be replaced by DSponsorAdmin
     forwarder: ZERO_ADDRESS,
     initialOwner: deployerAddr,
     royaltyBps: 100, // 1%
@@ -105,19 +93,37 @@ async function deploy() {
     initDSponsorNFTParams,
     offerInit,
     {
-      gasLimit: '1000000' // 1M gas, hardhat set automaticcaly a limit too low
+      gasLimit: '1000000' // 1M gas, hardhat set automatically a limit too low
     }
   )
+  await tx.wait(6)
+
   if (!tx.hash) throw new Error('No tx hash')
   const receipt = await provider.getTransactionReceipt(tx.hash || '')
   const event = receipt?.logs
     .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
     .find((e) => e?.name === 'NewDSponsorNFT')
-  if (!event) throw new Error('No event')
+  if (!event) {
+    console.log('No event for tx', tx)
+    throw new Error('No event for tx')
+  }
 
   const DSponsorNFTAddress = event.args[0]
 
   console.log('DSponsorNFT deployed to:', DSponsorNFTAddress)
+
+  await run('verify:verify', {
+    address: DSponsorNFTImplementationAddress,
+    constructorArguments: []
+  })
+  await run('verify:verify', {
+    address: DSponsorNFTFactoryAddress,
+    constructorArguments: [DSponsorNFTImplementationAddress]
+  })
+  await run('verify:verify', {
+    address: DSponsorAdminAddress,
+    constructorArguments: DSponsorAdminArgs
+  })
 }
 
 deploy().catch((error) => {
@@ -125,8 +131,10 @@ deploy().catch((error) => {
   process.exitCode = 1
 })
 
-// Mumbai (80001)
-// DSponsorNFTImplementation deployed to: 0xC6cCe35375883872826DdF3C30557F16Ec4DD94c
-// DSponsorNFTFactory deployed to: 0x86aDf604B5B72d270654F3A0798cabeBC677C7fc
-// DSponsorAdmin deployed to: 0xE3aE42A640C0C00F8e0cB6C3B1Df50a0b45d6B44
-// DSponsorNFT example deployed to: 0x57a57e75CeD4F24c19D635a211c76933fb8EAe06
+/*
+Deploying to chainId: 80001 with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0xFEAE8589A5e28bB8e9271F11062f8ECAb2bDB6EA
+DSponsorNFTFactory deployed to: 0x06DC507a5b0Dd3aF54EBB56177f27283456048C4
+DSponsorAdmin deployed to: 0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3
+DSponsorNFT deployed to: 0x8C4115060A52DD8693521095f6f150D3F2aaFa53
+*/
