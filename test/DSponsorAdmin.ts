@@ -1046,7 +1046,19 @@ describe('DSponsorAdmin', function () {
       }
       const contractURI = 'ipfs://QmX....'
 
-      // todo-creator: terms of service, PDF stored on IPFS
+      // todo-creator: creator metadata, terms of service and more - JSON stored on IPFS
+      const rules = {
+        creatorName: 'SiBorg',
+        creatorDescription:
+          'SiBorg app enhances Twitter spaces listening experience',
+        creatorImg: 'https://external-link-url.com/image.png',
+        offerName: contractMetadata.name,
+        offerDescription: 'Ad spaces for SiBorg search results',
+        offerImg: 'https://external-link-url.com/image.png',
+        terms: 'ipfs://QmX....',
+        validFromDate: '2024-01-01T00:00:00Z',
+        validToDate: '2024-12-31T23:59:59Z'
+      }
       const rulesURI = 'ipfs://QmX....'
 
       // todo-creator: define the first keywords to be tokenized, and their prices / currencies
@@ -1060,7 +1072,7 @@ describe('DSponsorAdmin', function () {
         // sponsor has enough in balance to mint
         parseEther('0.5'),
 
-        // we want to set the price of 1 MATIC for 'ethereum'
+        // we want to set the price of 150.50 MATIC for 'ethereum'
         parseEther('150.50')
       ]
       // set 6.25 USDCe for other tokens like 'nft'
@@ -1312,7 +1324,7 @@ describe('DSponsorAdmin', function () {
       expect(await SiborgDSponsorNFT.MAX_SUPPLY()).to.be.equal(uint256Max)
 
       /**
-       * siborgOwner mints and transfer it
+       * siborgOwner mints and transfers it
        * (simulate secondary sale)
        */
       await SiborgDSponsorNFT.connect(siborgOwner).mint(

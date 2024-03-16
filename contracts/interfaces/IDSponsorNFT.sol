@@ -140,6 +140,11 @@ interface IDSponsorNFTBase {
 
     function setTokenURI(uint256 tokenId, string memory URI) external;
 
+    function setTokenURIs(
+        uint256[] calldata _tokenIds,
+        string[] calldata _tokenURIs
+    ) external;
+
     function getMintPrice(
         uint256 tokenId,
         address currency
