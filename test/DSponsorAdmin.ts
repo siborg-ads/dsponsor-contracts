@@ -207,7 +207,7 @@ describe('DSponsorAdmin', function () {
       )
     })
 
-    it('Should allow deployer to the protocol fee', async function () {
+    it('Should allow deployer to update the protocol fee', async function () {
       await loadFixture(deployFixture)
 
       await expect(
@@ -225,6 +225,14 @@ describe('DSponsorAdmin', function () {
       await expect(
         DSponsorAdmin.connect(deployer).updateProtocolFee(ZERO_ADDRESS, 500)
       ).to.revertedWithCustomError(DSponsorAdmin, 'ZeroAddress')
+    })
+
+    it('Should revert if fee bps > 100 %', async function () {
+      await loadFixture(deployFixture)
+
+      await expect(
+        DSponsorAdmin.connect(deployer).updateProtocolFee(user2Addr, 10001)
+      ).to.revertedWithCustomError(DSponsorAdmin, 'InvalidBps')
     })
   })
 

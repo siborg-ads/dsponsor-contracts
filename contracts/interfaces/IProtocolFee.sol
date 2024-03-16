@@ -15,6 +15,7 @@ interface IProtocolFee {
     error ExternalCallError();
     error InsufficientAllowance();
     error InsufficientFunds();
+    error InvalidBps();
     error ZeroAddress();
 
     event CallWithProtocolFee(

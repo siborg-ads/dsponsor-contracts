@@ -24,6 +24,9 @@ interface UniV3SwapRouter is ISwapRouter, IPeripheryPayments {
 abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    /// @dev The max bps of the contract. So, 10_000 == 100 %
+    uint64 public constant MAX_BPS = 10_000;
+
     UniV3SwapRouter public immutable swapRouter;
     uint96 public bps;
     address public recipient;
@@ -161,6 +164,9 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
     function _updateProtocolFee(address _recipient, uint96 _bps) internal {
         if (_recipient == address(0)) {
             revert ZeroAddress();
+        }
+        if (_bps > MAX_BPS) {
+            revert InvalidBps();
         }
         bps = _bps;
         recipient = _recipient;
