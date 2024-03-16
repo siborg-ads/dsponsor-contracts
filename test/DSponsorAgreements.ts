@@ -309,6 +309,23 @@ describe('DSponsorAgreements', function () {
           adParameters[1],
           adData
         )
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          [adParameters[1]],
+          [adData]
+        )
+      )
+        .to.emit(DSponsorAgreements, 'UpdateAdProposal')
+        .withArgs(
+          offerIdERC721Mock,
+          tokensUser[0],
+          proposalIdCounter + 2,
+          adParameters[1],
+          adData
+        )
     })
 
     it('Should allow sponsoring data submission for tenant', async function () {
@@ -330,6 +347,23 @@ describe('DSponsorAgreements', function () {
           adParameters[1],
           adData
         )
+
+      await expect(
+        DSponsorAgreements.connect(user2).submitAdProposals(
+          [offerIdDSponsorNFT],
+          [tokensUser[1]],
+          [adParameters[1]],
+          [adData]
+        )
+      )
+        .to.emit(DSponsorAgreements, 'UpdateAdProposal')
+        .withArgs(
+          offerIdDSponsorNFT,
+          tokensUser[1],
+          proposalIdCounter + 2,
+          adParameters[1],
+          adData
+        )
     })
 
     it('Should revert if sender is not owner nor user/tenant of token', async function () {
@@ -348,6 +382,33 @@ describe('DSponsorAgreements', function () {
           'UnallowedSponsorOperation'
         )
         .withArgs(userAddr, offerIdERC721Mock, tokensUser[1])
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[1]],
+          [adParameters[1]],
+          [adData]
+        )
+      )
+        .to.revertedWithCustomError(
+          DSponsorAgreements,
+          'UnallowedSponsorOperation'
+        )
+        .withArgs(userAddr, offerIdERC721Mock, tokensUser[1])
+    })
+
+    it('Should revert submit batch if args length are not equal', async function () {
+      await loadFixture(deployFixture)
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[1]],
+          [adParameters[1]],
+          [adData, 'data2']
+        )
+      ).to.revertedWithCustomError(DSponsorAgreements, 'InvalidArrayLength')
     })
 
     it('Should revert if token id does not exist', async function () {
@@ -359,6 +420,15 @@ describe('DSponsorAgreements', function () {
           100,
           adParameters[1],
           adData
+        )
+      ).to.revertedWithCustomError(ERC721Mock, 'ERC721NonexistentToken')
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [100],
+          [adParameters[1]],
+          [adData]
         )
       ).to.revertedWithCustomError(ERC721Mock, 'ERC721NonexistentToken')
     })
@@ -376,6 +446,17 @@ describe('DSponsorAgreements', function () {
       )
         .to.revertedWithCustomError(DSponsorAgreements, 'UnallowedAdParameter')
         .withArgs(offerIdERC721Mock, 'test')
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          ['test'],
+          [adData]
+        )
+      )
+        .to.revertedWithCustomError(DSponsorAgreements, 'UnallowedAdParameter')
+        .withArgs(offerIdERC721Mock, 'test')
     })
 
     it('Should revert if data is empty', async function () {
@@ -387,6 +468,15 @@ describe('DSponsorAgreements', function () {
           tokensUser[0],
           adParameters[1],
           ''
+        )
+      ).to.revertedWithCustomError(DSponsorAgreements, 'NoAdDataSubmitted')
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          [adParameters[1]],
+          ['']
         )
       ).to.revertedWithCustomError(DSponsorAgreements, 'NoAdDataSubmitted')
     })
@@ -403,6 +493,15 @@ describe('DSponsorAgreements', function () {
           0,
           adParameters[1],
           'test'
+        )
+      ).to.reverted
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdCounter + 1],
+          [0],
+          [adParameters[1]],
+          ['test']
         )
       ).to.reverted
     })
@@ -434,6 +533,15 @@ describe('DSponsorAgreements', function () {
       )
         .to.revertedWithCustomError(DSponsorAgreements, 'DisabledOffer')
         .withArgs(offerIdERC721Mock)
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          [adParameters[1]],
+          [adData]
+        )
+      ).to.revertedWithCustomError(DSponsorAgreements, 'DisabledOffer')
     })
 
     it('Should revert if offer is not linked to a valid ERC721 contract', async function () {
@@ -448,6 +556,15 @@ describe('DSponsorAgreements', function () {
           0,
           adParameters[1],
           'test'
+        )
+      ).to.reverted
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposals(
+          [offerIdCounter + 1],
+          [0],
+          [adParameters[1]],
+          ['test']
         )
       ).to.reverted
     })
@@ -558,14 +675,16 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(owner).reviewAdProposal(
-          offerIdDSponsorNFT,
-          tokensUser[1],
-          proposalIdDSponsorNFT,
-          adParameters[1],
-          true,
-          ''
-        )
+        DSponsorAgreements.connect(owner).reviewAdProposals([
+          {
+            offerId: offerIdDSponsorNFT,
+            tokenId: tokensUser[1],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[1],
+            validated: true,
+            reason: ''
+          }
+        ])
       )
         .to.emit(DSponsorAgreements, 'UpdateAdValidation')
         .withArgs(
@@ -590,14 +709,16 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(owner).reviewAdProposal(
-          offerIdDSponsorNFT,
-          tokensUser[1],
-          proposalIdDSponsorNFT,
-          adParameters[1],
-          false,
-          ''
-        )
+        DSponsorAgreements.connect(owner).reviewAdProposals([
+          {
+            offerId: offerIdDSponsorNFT,
+            tokenId: tokensUser[1],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[1],
+            validated: false,
+            reason: ''
+          }
+        ])
       )
         .to.emit(DSponsorAgreements, 'UpdateAdValidation')
         .withArgs(
@@ -622,14 +743,16 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).reviewAdProposal(
-          offerIdDSponsorNFT,
-          tokensUser[1],
-          proposalIdDSponsorNFT,
-          adParameters[1],
-          true,
-          ''
-        )
+        DSponsorAgreements.connect(validator).reviewAdProposals([
+          {
+            offerId: offerIdDSponsorNFT,
+            tokenId: tokensUser[1],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[1],
+            validated: true,
+            reason: ''
+          }
+        ])
       )
         .to.emit(DSponsorAgreements, 'UpdateAdValidation')
         .withArgs(
@@ -669,14 +792,16 @@ describe('DSponsorAgreements', function () {
         .withArgs(validatorAddr, offerIdERC721Mock)
 
       await expect(
-        DSponsorAgreements.connect(user).reviewAdProposal(
-          offerIdDSponsorNFT,
-          tokensUser[1],
-          proposalIdDSponsorNFT,
-          adParameters[1],
-          true,
-          ''
-        )
+        DSponsorAgreements.connect(user).reviewAdProposals([
+          {
+            offerId: offerIdDSponsorNFT,
+            tokenId: tokensUser[1],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[1],
+            validated: true,
+            reason: ''
+          }
+        ])
       )
         .to.be.revertedWithCustomError(
           DSponsorAgreements,
@@ -714,14 +839,16 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).reviewAdProposal(
-          offerIdERC721Mock,
-          tokensUser[0],
-          proposalIdDSponsorNFT,
-          adParameters[1],
-          true,
-          ''
-        )
+        DSponsorAgreements.connect(validator).reviewAdProposals([
+          {
+            offerId: offerIdERC721Mock,
+            tokenId: tokensUser[0],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[1],
+            validated: true,
+            reason: ''
+          }
+        ])
       )
         .to.revertedWithCustomError(
           DSponsorAgreements,
@@ -739,14 +866,16 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorAgreements.connect(validator).reviewAdProposal(
-          offerIdDSponsorNFT,
-          tokensUser[1],
-          proposalIdDSponsorNFT,
-          adParameters[0],
-          true,
-          ''
-        )
+        DSponsorAgreements.connect(validator).reviewAdProposals([
+          {
+            offerId: offerIdDSponsorNFT,
+            tokenId: tokensUser[1],
+            proposalId: proposalIdDSponsorNFT,
+            adParameter: adParameters[0],
+            validated: true,
+            reason: ''
+          }
+        ])
       )
         .to.revertedWithCustomError(
           DSponsorAgreements,
@@ -808,11 +937,11 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       const encodedFunctionData =
-        DSponsorAgreements.interface.encodeFunctionData('submitAdProposal', [
-          offerIdERC721Mock,
-          tokensUser[0],
-          adParameters[1],
-          adData
+        DSponsorAgreements.interface.encodeFunctionData('submitAdProposals', [
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          [adParameters[1]],
+          [adData]
         ])
 
       await expect(
@@ -829,11 +958,11 @@ describe('DSponsorAgreements', function () {
       await loadFixture(deployFixture)
 
       const encodedFunctionData =
-        DSponsorAgreements.interface.encodeFunctionData('submitAdProposal', [
-          offerIdERC721Mock,
-          tokensUser[0],
-          adParameters[1],
-          adData
+        DSponsorAgreements.interface.encodeFunctionData('submitAdProposals', [
+          [offerIdERC721Mock],
+          [tokensUser[0]],
+          [adParameters[1]],
+          [adData]
         ])
 
       await expect(

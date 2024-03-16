@@ -47,6 +47,16 @@ interface IDSponsorAgreements {
         uint256 lastSubmitted; // ID of the latest ad proposal submission.
     }
 
+    /// @dev Struct to batch review ad proposals
+    struct ReviewAdProposal {
+        uint256 offerId;
+        uint256 tokenId;
+        uint256 proposalId;
+        string adParameter;
+        bool validated;
+        string reason;
+    }
+
     /* ****************
      *  ERRORS
      *****************/
@@ -54,6 +64,7 @@ interface IDSponsorAgreements {
     error CannotRemoveSelfAsAdmin();
     error DisabledOffer(uint256 offerId);
     error EmptyString(string key);
+    error InvalidArrayLength();
     error NoAdDataSubmitted();
     error NoAdminsProvided();
     error NoAdParametersProvided();
@@ -131,13 +142,11 @@ interface IDSponsorAgreements {
         string calldata data
     ) external;
 
-    function updateOffer(
-        uint256 offerId,
-        bool disable,
-        string calldata name,
-        string calldata rulesURI,
-        OfferOptions calldata addOptions,
-        OfferOptions calldata removeOptions
+    function submitAdProposals(
+        uint256[] calldata offerId,
+        uint256[] calldata tokenIds,
+        string[] calldata adParameters,
+        string[] calldata data
     ) external;
 
     function reviewAdProposal(
@@ -147,6 +156,17 @@ interface IDSponsorAgreements {
         string calldata adParameter,
         bool validated,
         string calldata reason
+    ) external;
+
+    function reviewAdProposals(ReviewAdProposal[] calldata reviews) external;
+
+    function updateOffer(
+        uint256 offerId,
+        bool disable,
+        string calldata name,
+        string calldata rulesURI,
+        OfferOptions calldata addOptions,
+        OfferOptions calldata removeOptions
     ) external;
 
     /* ****************

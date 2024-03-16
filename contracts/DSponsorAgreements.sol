@@ -159,42 +159,35 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         uint256 tokenId,
         string calldata adParameter,
         string calldata data
-    ) external onlySponsor(offerId, tokenId) {
+    ) public onlySponsor(offerId, tokenId) {
         _submitAdProposal(offerId, tokenId, adParameter, data);
     }
 
-    /* ****************
-     *  EXTERNAL FUNCTIONS
-     *****************/
-
     /**
-     * @notice Updates the details and settings of an existing sponsoring offer.
-     * @param offerId The ID of the offer to update.
-     * @param disable Flag to disable or enable the offer.
-     * @param name New name for the offer. Set empty string to keep the current name.
-     * @param rulesURI New URI for the offer's description and conditions. Set empty string to keep the current URI.
-     * @param addOptions Add admins, validators, and ad parameters.
-     * @param removeOptions Remove admins, validators, and ad parameters.
-     * @dev Only callable by offer admins. Emits `UpdateOffer` and potentially `UpdateOfferAdmin`, `UpdateOfferValidator`, `UpdateOfferAdParameter` events.
+     * @notice Submits multiple ad proposals. See {submitAdProposal}
      */
-    function updateOffer(
-        uint256 offerId,
-        bool disable,
-        string calldata name,
-        string calldata rulesURI,
-        OfferOptions calldata addOptions,
-        OfferOptions calldata removeOptions
-    ) external onlyAdmin(offerId) {
-        _updateOffer(offerId, disable, name, rulesURI);
+    function submitAdProposals(
+        uint256[] calldata offerIds,
+        uint256[] calldata tokenIds,
+        string[] calldata adParameters,
+        string[] calldata data
+    ) external {
+        if (
+            offerIds.length != tokenIds.length ||
+            offerIds.length != adParameters.length ||
+            offerIds.length != data.length
+        ) {
+            revert InvalidArrayLength();
+        }
 
-        _updateOfferAdmins(offerId, true, addOptions.admins);
-        _updateOfferAdmins(offerId, false, removeOptions.admins);
-
-        _updateOfferValidators(offerId, true, addOptions.validators);
-        _updateOfferValidators(offerId, false, removeOptions.validators);
-
-        _updateOfferAdParameters(offerId, true, addOptions.adParameters);
-        _updateOfferAdParameters(offerId, false, removeOptions.adParameters);
+        for (uint256 i = 0; i < offerIds.length; i++) {
+            submitAdProposal(
+                offerIds[i],
+                tokenIds[i],
+                adParameters[i],
+                data[i]
+            );
+        }
     }
 
     /**
@@ -214,7 +207,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         string calldata adParameter,
         bool validated,
         string calldata reason
-    ) external onlyValidator(offerId) {
+    ) public onlyValidator(offerId) {
         SponsoringProposal storage adParameterProposals = _sponsoringOffers[
             offerId
         ].proposals[tokenId][_hashString(adParameter)];
@@ -245,6 +238,52 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
             validated,
             reason
         );
+    }
+
+    /**
+     * @notice Validates or rejects multiple ad proposals. See {reviewAdProposal}
+     **/
+    function reviewAdProposals(ReviewAdProposal[] calldata reviews) external {
+        for (uint256 i = 0; i < reviews.length; i++) {
+            reviewAdProposal(
+                reviews[i].offerId,
+                reviews[i].tokenId,
+                reviews[i].proposalId,
+                reviews[i].adParameter,
+                reviews[i].validated,
+                reviews[i].reason
+            );
+        }
+    }
+
+    /**
+     * @notice Updates the details and settings of an existing sponsoring offer.
+     * @param offerId The ID of the offer to update.
+     * @param disable Flag to disable or enable the offer.
+     * @param name New name for the offer. Set empty string to keep the current name.
+     * @param rulesURI New URI for the offer's description and conditions. Set empty string to keep the current URI.
+     * @param addOptions Add admins, validators, and ad parameters.
+     * @param removeOptions Remove admins, validators, and ad parameters.
+     * @dev Only callable by offer admins. Emits `UpdateOffer` and potentially `UpdateOfferAdmin`, `UpdateOfferValidator`, `UpdateOfferAdParameter` events.
+     */
+    function updateOffer(
+        uint256 offerId,
+        bool disable,
+        string calldata name,
+        string calldata rulesURI,
+        OfferOptions calldata addOptions,
+        OfferOptions calldata removeOptions
+    ) external onlyAdmin(offerId) {
+        _updateOffer(offerId, disable, name, rulesURI);
+
+        _updateOfferAdmins(offerId, true, addOptions.admins);
+        _updateOfferAdmins(offerId, false, removeOptions.admins);
+
+        _updateOfferValidators(offerId, true, addOptions.validators);
+        _updateOfferValidators(offerId, false, removeOptions.validators);
+
+        _updateOfferAdParameters(offerId, true, addOptions.adParameters);
+        _updateOfferAdParameters(offerId, false, removeOptions.adParameters);
     }
 
     /* ****************

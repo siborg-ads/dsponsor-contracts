@@ -112,12 +112,6 @@ interface IDSponsorNFTBase {
         string calldata tokenData
     ) external payable;
 
-    function mintFromData(
-        address to,
-        address currency,
-        string calldata tokenData
-    ) external payable;
-
     function setBaseURI(string memory URI) external;
 
     function setContractURI(string memory URI) external;

@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 
-interface UniV3SwapRouter is ISwapRouter {
+interface UniV3SwapRouter is ISwapRouter, IPeripheryPayments {
     function WETH9() external view returns (address);
 }
 
@@ -47,7 +48,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
      * @param callData The calldata to be sent with the call
      * @param currency The address of the ERC20 token for fee payment, or address(0) for native currency
      * @param baseAmount The base amount on which the fee is calculated
-     * @param referral Referral information for the transaction
+     * @param referral Referral information for the transaction. referral.spender will receive the refund if a swap occured
      * @return returnData The data returned by the external call
      *
      * Emits a `CallWithProtocolFee` event upon successful execution
@@ -75,7 +76,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             // Handling ERC20 tokens
             if (msg.value > 0) {
                 // Swap native currency to ERC20 if value is sent
-                _swapNativeToERC20(currency, totalAmount);
+                _swapNativeToERC20(currency, totalAmount, referral.spender);
                 IERC20(currency).safeTransfer(recipient, fee);
             } else {
                 // Transfer ERC20 tokens from user wallet
@@ -121,12 +122,14 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
      *
      * @param currency The address of the ERC20 token to swap to
      * @param amount The amount of ERC20 tokens to get
+     * @param recipientRefund The address to refund the remaining native currency
      *
      * @return amountOut The amount of ERC20 tokens received
      */
     function _swapNativeToERC20(
         address currency,
-        uint256 amount
+        uint256 amount,
+        address recipientRefund
     ) internal returns (uint256 amountOut) {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
             .ExactOutputSingleParams({
@@ -139,8 +142,12 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                 amountInMaximum: msg.value,
                 sqrtPriceLimitX96: 0
             });
-
         amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
+
+        swapRouter.refundETH();
+        if (address(this).balance > 0) {
+            Address.sendValue(payable(recipientRefund), address(this).balance);
+        }
     }
 
     /**
@@ -159,4 +166,6 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
         recipient = _recipient;
         emit FeeUpdate(_recipient, _bps);
     }
+
+    receive() external payable {}
 }

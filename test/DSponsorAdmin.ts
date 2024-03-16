@@ -1,6 +1,13 @@
 import 'dotenv/config'
 import { expect } from 'chai'
-import { BaseContract, parseEther, Signer } from 'ethers'
+import {
+  BaseContract,
+  parseEther,
+  Signer,
+  toUtf8Bytes,
+  keccak256,
+  BigNumberish
+} from 'ethers'
 import { ethers } from 'hardhat'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { executeByForwarder } from '../utils/eip712'
@@ -16,6 +23,11 @@ import {
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 import { ZERO_ADDRESS } from '../utils/constants'
+import { stringToUint256 } from '../utils/convert'
+
+const uint256Max = BigInt(
+  '115792089237316195423570985008687907853269984665640564039457584007913129639935'
+)
 
 describe('DSponsorAdmin', function () {
   const provider = ethers.provider
@@ -54,7 +66,7 @@ describe('DSponsorAdmin', function () {
 
   const ERC20Amount: bigint = parseEther('15')
   const valuePrice: bigint = parseEther('1')
-  const USDCePrice = BigInt((55 * 10 ** 6).toString()) // 55 USDCe
+  const USDCePrice = BigInt((2 * 10 ** 6).toString()) // 2 USDCe
 
   const bps = 400
 
@@ -673,6 +685,8 @@ describe('DSponsorAdmin', function () {
         const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
         const value = parseEther('1000')
 
+        const balanceUser2BeforeSwap = await provider.getBalance(user2Addr)
+
         await expect(
           DSponsorAdmin.connect(user).mintAndSubmit(
             {
@@ -689,9 +703,14 @@ describe('DSponsorAdmin', function () {
           )
         ).to.changeTokenBalances(
           USDCeContract,
-          [user, user2, owner, treasury, DSponsorAdmin],
-          [0, 0, USDCePrice, fee, 0]
+          [user, owner, treasury, DSponsorAdmin],
+          [0, USDCePrice, fee, 0]
         )
+
+        const balanceUser2AfterSwap = await provider.getBalance(user2Addr)
+
+        // refund received by user2
+        expect(balanceUser2AfterSwap - balanceUser2BeforeSwap).to.be.gt(1)
 
         tokenId++
         await expect(
@@ -730,8 +749,8 @@ describe('DSponsorAdmin', function () {
             { value: value }
           )
         ).to.changeEtherBalances(
-          [user, user2, owner, treasury, DSponsorAdmin],
-          [-value, 0, 0, 0, 0]
+          [user, owner, treasury, DSponsorAdmin],
+          [-value, 0, 0, 0]
         )
       })
 
@@ -777,10 +796,6 @@ describe('DSponsorAdmin', function () {
 
       it('Should revert if ERC20 Amount overflow', async function () {
         await loadFixture(deployFixture)
-
-        const uint256Max = BigInt(
-          '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-        )
 
         await DSponsorNFT.connect(owner).setDefaultMintPrice(
           ERC20MockAddress,
@@ -1002,6 +1017,418 @@ describe('DSponsorAdmin', function () {
           encodedFunctionData
         )
       ).to.revertedWithCustomError(forwarder, 'FailedInnerCall')
+    })
+  })
+
+  describe('Complete scenarios', function () {
+    it('Should work as expected for SiBorg', async function () {
+      await loadFixture(deployFixture)
+
+      /**
+       * 0. Params to setup
+       */
+
+      // todo-creator: define royalties on secondary sales
+      const royaltyBps = 690 // 6.9%
+
+      // todo-creator: replace and impersonate addresses
+      const siborgOwner = owner
+      const siborgOwnerAddr = ownerAddr
+
+      // todo-creator: replace with the real contract metadata & upload to IPFS
+      const contractMetadata = {
+        name: 'Siborg Search Keywords Ad Spaces',
+        symbol: 'SiborgAds1',
+        description: 'Tokenized ad spaces from SiBorg result search results',
+        image: 'https://external-link-url.com/image.png',
+        external_link: 'https://external-link-url.com',
+        collaborators: [siborgOwnerAddr]
+      }
+      const contractURI = 'ipfs://QmX....'
+
+      // todo-creator: terms of service, PDF stored on IPFS
+      const rulesURI = 'ipfs://QmX....'
+
+      // todo-creator: define the first keywords to be tokenized, and their prices / currencies
+      const tokenizedKeywords = ['bitcoin', 'ethereum', 'nft', 'crypto', 'eth']
+
+      // todo-creator: need to define the prices for default token, and/or for each token
+      // we give here all possibilities: ERC20 / native coin, specific token / default, swap / no swap
+      const currencies = [ERC20MockAddress, ZERO_ADDRESS]
+      const amounts = [
+        // we want to set the price of 0.5 ERC20Mock for 'bitcoin'
+        // sponsor has enough in balance to mint
+        parseEther('0.5'),
+
+        // we want to set the price of 1 MATIC for 'ethereum'
+        parseEther('150.50')
+      ]
+      // set 6.25 USDCe for other tokens like 'nft'
+      // as sponsor does have USDCe tokens, he will pay in MATIC, the contract will swap
+      const defaultCurrency = USDCeAddr
+      const defaultAmount = BigInt((6.25 * 10 ** 6).toString())
+
+      // todo-tech: fetch the current price of USDCe, with Moralis API for example
+      // https://docs.moralis.io/web3-data-api/evm/reference/price/get-token-price?address=0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0&chain=eth&include=percent_change
+      // set the value accordingly, add a margin for the swap (will be refund to the sponsor if not used)
+      const defaultAmountValue = parseEther('18.25') // 18.25 MATIC for 6.25 USDCe
+
+      // todo-tech: referral system to apply, here we set vitalik.eth as the referral...
+      const referralAdditionalInformation =
+        '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+
+      // todo-tech: specs regarding adParameters / integrations
+      const adParameters = [
+        'linkURL',
+        'img5:1URL',
+        'twitterSpaceID',
+        'twitterUserID'
+      ]
+
+      // todo-tech: API route https://app.dsponsor.com/api/baseURIs/:chainId/:contractAddr/:tokenId
+      // -> should return a default 1:1 image
+      const baseURI = 'https://app.dsponsor.com/api/baseURIs'
+
+      const tokenIds: BigNumberish[] = tokenizedKeywords.map((t) =>
+        stringToUint256(t)
+      )
+
+      const siborgOfferId = offerId + 1 // will be the value from UpdateOffer event
+
+      const sponsor1 = user
+      const sponsor1Addr = userAddr
+      const sponsor2 = user2
+      const sponsor2Addr = user2Addr
+
+      const siborgNftParams: IDSponsorNFTBase.InitParamsStruct = {
+        name: contractMetadata.name,
+        symbol: contractMetadata.symbol,
+        baseURI,
+        contractURI,
+        minter: DSponsorAdminAddress,
+        maxSupply: uint256Max,
+        forwarder: ZERO_ADDRESS,
+        initialOwner: siborgOwnerAddr,
+        royaltyBps,
+        currencies: [],
+        prices: [],
+        allowedTokenIds: []
+      }
+
+      const siborgOfferInit: IDSponsorAgreements.OfferInitParamsStruct = {
+        name: contractMetadata.name,
+        rulesURI,
+        options: {
+          admins: [siborgOwnerAddr],
+          validators: [],
+          adParameters
+        }
+      }
+
+      /**
+       * 1. Create a DSponsorNFT contract and link an offer from it
+       */
+
+      const createDSponsorNFTAndOfferTx = await DSponsorAdmin.connect(
+        siborgOwner
+      ).createDSponsorNFTAndOffer(siborgNftParams, siborgOfferInit)
+
+      const createDSponsorNFTAndOfferTxReceipt =
+        await provider.getTransactionReceipt(createDSponsorNFTAndOfferTx.hash)
+
+      const NewDSponsorNFTevent = createDSponsorNFTAndOfferTxReceipt?.logs
+        .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
+        .find((e) => e?.name === 'NewDSponsorNFT')
+
+      const SiborgDSponsorNFTAddress = NewDSponsorNFTevent?.args[0]
+      const SiborgDSponsorNFT = await ethers.getContractAt(
+        'DSponsorNFT',
+        SiborgDSponsorNFTAddress
+      )
+
+      const UpdateOfferEvent = createDSponsorNFTAndOfferTxReceipt?.logs
+        .map((log: any) => DSponsorAdmin.interface.parseLog(log))
+        .find((e) => e?.name === 'UpdateOffer')
+      const offerIdFromEvent = UpdateOfferEvent?.args[0]
+
+      expect(offerIdFromEvent).to.equal(siborgOfferId)
+      expect(await DSponsorAdmin.getOfferContract(siborgOfferId)).to.equal(
+        SiborgDSponsorNFTAddress
+      )
+
+      /**
+       * 2. Specify tokens to be minted, and the prices
+       */
+
+      await SiborgDSponsorNFT.connect(siborgOwner).setTokensAllowlist(true)
+      await SiborgDSponsorNFT.connect(siborgOwner).setTokensAreAllowed(
+        tokenIds,
+        [true, true, true, true, true]
+      )
+
+      // Only 'bitcoin'
+      await SiborgDSponsorNFT.connect(siborgOwner).setMintPrice(
+        tokenIds[0],
+        currencies[0],
+        true, // enable, set to false to disable this price parameter
+        amounts[0]
+      )
+      // Only 'ethereum'
+      await SiborgDSponsorNFT.connect(siborgOwner).setMintPrice(
+        tokenIds[1],
+        currencies[1],
+        true, // enable, set to false to disable this price parameter
+        amounts[1]
+      )
+      // allow 'nft', 'crypto', 'eth' tokens to be sold too
+      await SiborgDSponsorNFT.connect(siborgOwner).setDefaultMintPrice(
+        defaultCurrency,
+        true, // enable, set to false to disable
+        defaultAmount
+      )
+
+      /**
+       * 3. Mint a token and submit an ad proposal
+       */
+
+      const fetchedBps = await DSponsorAdmin.connect(sponsor1).bps()
+      const mintAmounts = (amount: bigint) => {
+        const fee = (amount * fetchedBps) / BigInt('10000')
+        const amountWithFee = amount + fee
+        return { amount, fee, amountWithFee }
+      }
+
+      /**
+       * Mint with ERC20 payment
+       */
+      const mintParams0 = {
+        tokenId: stringToUint256(tokenizedKeywords[0]), // tokenIds[0]
+        to: sponsor1Addr,
+        currency: currencies[0],
+        tokenData: tokenizedKeywords[0],
+        offerId: siborgOfferId,
+        adParameters: [adParameters[0], adParameters[1]],
+        adDatas: [
+          'https://www.bitcoinforever.com',
+          'ipfs://ipfshash/b4ever-img5:1-edited.png'
+        ],
+        referralAdditionalInformation
+      }
+      await ERC20Mock.connect(sponsor1).approve(
+        DSponsorAdminAddress,
+        mintAmounts(amounts[0]).amountWithFee
+      )
+      const mintTx0 =
+        await DSponsorAdmin.connect(sponsor1).mintAndSubmit(mintParams0)
+      await expect(mintTx0).changeTokenBalances(
+        ERC20Mock,
+        [sponsor1, siborgOwner, treasury],
+        [
+          mintAmounts(amounts[0]).amountWithFee * BigInt('-1'),
+          amounts[0],
+          mintAmounts(amounts[0]).fee
+        ]
+      )
+      expect(
+        await SiborgDSponsorNFT.ownerOf(stringToUint256('bitcoin'))
+      ).to.equal(sponsor1Addr)
+
+      /**
+       * Mint with native currency payment
+       */
+      const mintParams1 = {
+        tokenId: stringToUint256(tokenizedKeywords[1]), // tokenIds[1]
+        to: sponsor2Addr,
+        currency: currencies[1],
+        tokenData: tokenizedKeywords[1],
+        offerId: siborgOfferId,
+        adParameters: [adParameters[0], adParameters[1]],
+        adDatas: [
+          'https://www.ethforever.com',
+          'ipfs://ipfshash/ethever-img5:1.png'
+        ],
+        referralAdditionalInformation
+      }
+      await ERC20Mock.connect(sponsor2).approve(
+        DSponsorAdminAddress,
+        mintAmounts(amounts[1]).amountWithFee
+      )
+      const mintTx1 = await DSponsorAdmin.connect(sponsor2).mintAndSubmit(
+        mintParams1,
+        { value: mintAmounts(amounts[1]).amountWithFee }
+      )
+      await expect(mintTx1).changeEtherBalances(
+        [sponsor2, siborgOwner, treasury],
+        [
+          mintAmounts(amounts[1]).amountWithFee * BigInt('-1'),
+          amounts[1],
+          mintAmounts(amounts[1]).fee
+        ]
+      )
+      expect(
+        await SiborgDSponsorNFT.ownerOf(stringToUint256('ethereum'))
+      ).to.equal(sponsor2Addr)
+
+      /**
+       * Mint with swap, paid by sponsor2 for sponsor1
+       * sponsor1 will receive the refund from the swap
+       */
+      const mintParams2 = {
+        tokenId: stringToUint256(tokenizedKeywords[2]), // tokenIds[2]
+        to: sponsor1Addr,
+        currency: defaultCurrency,
+        tokenData: tokenizedKeywords[2],
+        offerId: siborgOfferId,
+        adParameters: [adParameters[0], adParameters[1]],
+        adDatas: [
+          'https://www.myawesomenft.com',
+          'ipfs://ipfshash/manft-img5:1.png'
+        ],
+        referralAdditionalInformation
+      }
+      const sponsor1BalanceBefore = await provider.getBalance(sponsor1Addr)
+      const mintTx2 = await DSponsorAdmin.connect(sponsor2).mintAndSubmit(
+        mintParams2,
+        {
+          value: mintAmounts(defaultAmountValue).amountWithFee
+        }
+      )
+      const sponsor1BalanceAfter = await provider.getBalance(sponsor1Addr)
+      expect(sponsor1BalanceAfter).to.be.gt(sponsor1BalanceBefore)
+      await expect(mintTx2).changeEtherBalances(
+        [sponsor2, siborgOwner, treasury, DSponsorAdmin],
+        [mintAmounts(defaultAmountValue).amountWithFee * BigInt('-1'), 0, 0, 0]
+      )
+      await expect(mintTx2).changeTokenBalances(
+        USDCeContract,
+        [sponsor1, siborgOwner, treasury],
+        [0, defaultAmount, mintAmounts(defaultAmount).fee]
+      )
+      expect(await SiborgDSponsorNFT.ownerOf(stringToUint256('nft'))).to.equal(
+        sponsor1Addr
+      )
+
+      expect(await SiborgDSponsorNFT.totalSupply()).to.be.equal(3)
+      expect(await SiborgDSponsorNFT.MAX_SUPPLY()).to.be.equal(uint256Max)
+
+      /**
+       * siborgOwner mints and transfer it
+       * (simulate secondary sale)
+       */
+      await SiborgDSponsorNFT.connect(siborgOwner).mint(
+        stringToUint256('crypto'),
+        siborgOwnerAddr,
+        ZERO_ADDRESS, // ignored
+        'crypto'
+      )
+      await SiborgDSponsorNFT.connect(siborgOwner).transferFrom(
+        siborgOwnerAddr,
+        sponsor2Addr,
+        stringToUint256('crypto')
+      )
+      const manualSubmitTx = await DSponsorAdmin.connect(
+        sponsor2
+      ).submitAdProposal(
+        siborgOfferId,
+        stringToUint256('crypto'),
+        adParameters[0],
+        'https://www.crypto.com'
+      )
+
+      await expect(
+        DSponsorAdmin.connect(sponsor1).mintAndSubmit(
+          {
+            tokenId: stringToUint256(tokenizedKeywords[3]),
+            to: sponsor1Addr,
+            currency: defaultCurrency,
+            tokenData: tokenizedKeywords[3],
+            offerId: siborgOfferId,
+            adParameters: [adParameters[0], adParameters[1]],
+            adDatas: [
+              'https://www.myawesomenft.com',
+              'ipfs://ipfshash/manft-img5:1.png'
+            ],
+            referralAdditionalInformation
+          },
+          {
+            value: mintAmounts(defaultAmountValue).amountWithFee
+          }
+        )
+      ).to.be.revertedWithCustomError(SiborgDSponsorNFT, 'AlreadyMinted')
+
+      // fail to mint 'solana' as it's not allowed
+      await expect(
+        DSponsorAdmin.connect(sponsor1).mintAndSubmit(
+          {
+            tokenId: stringToUint256('solana'),
+            to: sponsor1Addr,
+            currency: defaultCurrency,
+            tokenData: 'solana',
+            offerId: siborgOfferId,
+            adParameters: [adParameters[0], adParameters[1]],
+            adDatas: [
+              'https://www.myawesomenft.com',
+              'ipfs://ipfshash/manft-img5:1.png'
+            ],
+            referralAdditionalInformation
+          },
+          {
+            value: mintAmounts(defaultAmountValue).amountWithFee
+          }
+        )
+      ).to.be.revertedWithCustomError(SiborgDSponsorNFT, 'TokenNotAllowed')
+
+      /**
+       * 4. Validate ad proposals
+       */
+
+      const receipt0 = await provider.getTransactionReceipt(mintTx0.hash)
+      const events0 = receipt0?.logs
+        .map((log: any) => DSponsorAdmin.interface.parseLog(log))
+        .filter((e) => e?.name === 'UpdateAdProposal')
+      const proposalIds0 = events0?.map((e) => e?.args[2])
+
+      expect(
+        await DSponsorAdmin.getOfferProposals(
+          siborgOfferId,
+          stringToUint256('bitcoin'),
+          mintParams0.adParameters[0]
+        )
+      ).to.deep.equal([proposalIds0?.[0], 0, 0])
+
+      await DSponsorAdmin.connect(siborgOwner).reviewAdProposals([
+        {
+          offerId: siborgOfferId,
+          tokenId: stringToUint256('bitcoin'),
+          proposalId: proposalIds0?.[0],
+          adParameter: mintParams0.adParameters[0],
+          validated: true,
+          reason: 'Looks good'
+        },
+        {
+          offerId: siborgOfferId,
+          tokenId: stringToUint256('bitcoin'),
+          proposalId: proposalIds0?.[1],
+          adParameter: mintParams0.adParameters[1],
+          validated: true,
+          reason: 'Looks good too'
+        }
+      ])
+
+      expect(
+        await DSponsorAdmin.getOfferProposals(
+          siborgOfferId,
+          stringToUint256('bitcoin'),
+          mintParams0.adParameters[0]
+        )
+      ).to.deep.equal([0, proposalIds0?.[0], 0])
+      expect(
+        await DSponsorAdmin.getOfferProposals(
+          siborgOfferId,
+          stringToUint256('bitcoin'),
+          mintParams0.adParameters[1]
+        )
+      ).to.deep.equal([0, proposalIds0?.[1], 0])
     })
   })
 })
