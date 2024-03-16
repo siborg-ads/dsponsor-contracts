@@ -61,6 +61,7 @@ describe('DSponsorNFT', function () {
 
   let initParams: IDSponsorNFTBase.InitParamsStruct
 
+  const chainId = 137
   let tokenId = 10
 
   const tokenData = 'keyword'
@@ -115,8 +116,8 @@ describe('DSponsorNFT', function () {
     initParams = {
       name: 'DSponsorNFT',
       symbol: 'DSNFT',
-      baseURI: 'baseURI',
-      contractURI: 'contractURI',
+      baseURI: 'https://baseURI.com',
+      contractURI: 'https://contractURI.com',
       maxSupply: BigInt('5'),
       minter: userAddr,
       forwarder: forwarderAddress,
@@ -135,7 +136,7 @@ describe('DSponsorNFT', function () {
       .find((e) => e?.name === 'NewDSponsorNFT')
     if (!event) throw new Error('No event')
 
-    DSponsorNFTAddress = event.args[0]
+    DSponsorNFTAddress = event.args[0].toLowerCase()
     DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
 
     await ERC20Mock.connect(user).approve(
@@ -440,20 +441,6 @@ describe('DSponsorNFT', function () {
           tokenData
         )
       ).to.changeEtherBalances([userAddr, ownerAddr], [0, 0])
-    })
-
-    it('Should allow to mint from input data', async function () {
-      await loadFixture(deployFixture)
-
-      await expect(
-        await DSponsorNFT.connect(owner).mintFromData(
-          user2Addr,
-          ZERO_ADDRESS,
-          tokenData,
-          { value }
-        )
-      )
-      expect(await DSponsorNFT.ownerOf(hashedTokenId)).to.be.equal(user2Addr)
     })
 
     it('Should support specific pricing per token', async function () {
@@ -838,13 +825,14 @@ describe('DSponsorNFT', function () {
 
       const maxSupply = await DSponsorNFT.MAX_SUPPLY()
 
-      const baseURI2 = 'baseURI2'
-      const contractURI2 = 'contractURI2'
-      const tokenURI_0 = 'tokenURI0'
+      const baseURI2 = 'https://baseURI2.com'
+      const contractURI2 = 'https://contractURI2.com'
+      const tokenURI_0 = 'https://tokenURI_0.com'
 
       const tokenId = 0
+
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        initParams.baseURI + tokenId
+        `${initParams.baseURI}/${chainId}/${DSponsorNFTAddress}/${tokenId}`
       )
 
       await DSponsorNFT.connect(owner).setBaseURI(baseURI2)
@@ -856,17 +844,24 @@ describe('DSponsorNFT', function () {
       expect(await DSponsorNFT.contractURI()).to.be.equal(contractURI2)
 
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        baseURI2 + tokenId
+        `${baseURI2}/${chainId}/${DSponsorNFTAddress}/${tokenId}`
       )
       await DSponsorNFT.connect(owner).setTokenURI(tokenId, tokenURI_0)
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(tokenURI_0)
 
       const tokenId2 = 10000000
       expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(
-        baseURI2 + `${tokenId2}`
+        `${baseURI2}/${chainId}/${DSponsorNFTAddress}/${tokenId2}`
       )
-      await DSponsorNFT.connect(owner).setTokenURI(tokenId2, tokenURI_0)
+      await DSponsorNFT.connect(owner).setTokenURIs([tokenId2], [tokenURI_0])
       expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(tokenURI_0)
+
+      await expect(
+        DSponsorNFT.connect(owner).setTokenURIs(
+          [tokenId2],
+          [tokenURI_0, tokenURI_0]
+        )
+      ).to.revertedWithCustomError(DSponsorNFT, 'InvalidInputLengths')
     })
 
     it('Should set & get default pricing parameters correctly', async function () {

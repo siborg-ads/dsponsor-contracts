@@ -28,6 +28,7 @@ contract DSponsorNFT is
 {
     using SafeERC20 for IERC20;
     using Strings for uint256;
+    using Strings for address;
 
     // Counter for the number of tokens minted so far.
     uint256 public totalSupply;
@@ -203,12 +204,12 @@ contract DSponsorNFT is
      * has not been previously minted. 
      * It's also possible to compute the tokenId off-chain and then call the `mint` function directly.
      * 
-     * Here is an example of how to compute the tokenId in JavaScript:
-     * ```javascript
-     * const ethers = require('ethers');
-     * const encodedData = ethers.utils.toUtf8Bytes(tokenData);
-     * const hash = ethers.utils.keccak256(encodedData);
-     * const tokenId = ethers.BigNumber.from(hash).toString();
+     * Here is an example of how to compute the tokenId in Typescript:
+     * ```typescript
+     * import { toUtf8Bytes, keccak256 } from 'ethers'
+     * function stringToUint256(value: string): BigInt {
+     *   return BigInt(keccak256(toUtf8Bytes(value)))
+     * }
      * ```
      *
      * @param to The recipient address of the minted token. This address will become the token's owner.
@@ -216,7 +217,7 @@ contract DSponsorNFT is
      * @param tokenData A unique string representing the keyword or data to be tokenized.
 
      * Payment logic and validation is handled within the `mint` function.
-     */
+    
     function mintFromData(
         address to,
         address currency,
@@ -225,6 +226,7 @@ contract DSponsorNFT is
         uint256 tokenId = uint256(keccak256(abi.encodePacked(tokenData)));
         mint(tokenId, to, currency, tokenData);
     }
+    */
 
     /* ******************
      *  ONLY OWNER
@@ -333,14 +335,33 @@ contract DSponsorNFT is
      * @notice Assigns a custom URI to a specific token, overriding the default URI construction.
      * Allows setting URIs for future tokens, not yet minted.
      *
-     * @param tokenId Identifier of the token to assign the URI to.
+     * @param _tokenId Identifier of the token to assign the URI to.
      * @param _tokenURI The custom URI to set for the token.
      */
     function setTokenURI(
-        uint256 tokenId,
+        uint256 _tokenId,
         string memory _tokenURI
+    ) public onlyOwner {
+        tokenURIs[_tokenId] = _tokenURI;
+    }
+
+    /**
+     * @notice Assigns custom URIs to multiple tokens, overriding the default URI construction.
+     * Allows setting URIs for future tokens, not yet minted.
+     *
+     * @param _tokenIds Identifiers of the tokens to assign the URIs to.
+     * @param _tokenURIs The custom URIs to set for the tokens.
+     */
+    function setTokenURIs(
+        uint256[] calldata _tokenIds,
+        string[] calldata _tokenURIs
     ) external onlyOwner {
-        tokenURIs[tokenId] = _tokenURI;
+        if (_tokenIds.length != _tokenURIs.length) {
+            revert InvalidInputLengths();
+        }
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            tokenURIs[_tokenIds[i]] = _tokenURIs[i];
+        }
     }
 
     /* ****************
@@ -404,13 +425,13 @@ contract DSponsorNFT is
      *****************/
 
     /**
-     * @notice Constructs the URI for a given token ID, combining the base URI with token-specific extensions if available.
-     *
+     * @notice Constructs the URI for a given token ID, combining the base URI with token-specific extensions if available.     *
      *
      * @param tokenId The unique identifier for a token.
      * @return The full URI string pointing to the token's metadata. If the base URI is not set, returns an empty string or
-     * the token-specific URI if set. If both base URI and token-specific URI are set, concatenates them. Otherwise,
-     * appends the token ID to the base URI.
+     * the token-specific URI if set. If both base URI and token-specific URI are set, concatenates them.
+     * Otherwise, constructs a URI with the base URI, the chain ID, the contract address, and the token ID.
+     * exemple: https://api.example.com/1/0x1234567890123456789012345678901234567890/1
      */
     function tokenURI(
         uint256 tokenId
@@ -420,7 +441,18 @@ contract DSponsorNFT is
         if (bytes(_tokenURI).length > 0) {
             return _tokenURI;
         } else {
-            return string(abi.encodePacked(baseURI, tokenId.toString()));
+            return
+                string(
+                    abi.encodePacked(
+                        baseURI,
+                        "/",
+                        block.chainid.toString(),
+                        "/",
+                        address(this).toHexString(),
+                        "/",
+                        tokenId.toString()
+                    )
+                );
         }
     }
 

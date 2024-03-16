@@ -40,7 +40,8 @@ const config: HardhatUserConfig = {
       forking: {
         url: process.env.MAINNET_RPC_URL as string,
         blockNumber: 53116830
-      }
+      },
+      chainId: 137
     },
     ...deploymentNetworks
   },

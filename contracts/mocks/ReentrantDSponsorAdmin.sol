@@ -53,7 +53,9 @@ contract ReentrantDSponsorAdmin is Reentrancy {
                 );
 
             // slither-disable-next-line reentrancy-eth
-            DSponsorAdmin(msg.sender).mintAndSubmit{value: msg.value}(args);
+            DSponsorAdmin(payable(msg.sender)).mintAndSubmit{value: msg.value}(
+                args
+            );
         }
     }
 
