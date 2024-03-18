@@ -190,8 +190,8 @@ describe('DSponsorAdmin', function () {
       )
       expect(await DSponsorAdmin.trustedForwarder()).to.equal(forwarderAddress)
       expect(await DSponsorAdmin.owner()).to.equal(deployerAddr)
-      expect(await DSponsorAdmin.recipient()).to.equal(treasuryAddr)
-      expect(await DSponsorAdmin.bps()).to.equal(bps)
+      expect(await DSponsorAdmin.feeRecipient()).to.equal(treasuryAddr)
+      expect(await DSponsorAdmin.feeBps()).to.equal(bps)
     })
   })
 
@@ -215,8 +215,8 @@ describe('DSponsorAdmin', function () {
       )
         .to.emit(DSponsorAdmin, 'FeeUpdate')
         .withArgs(user2Addr, 500)
-      expect(await DSponsorAdmin.recipient()).to.equal(user2Addr)
-      expect(await DSponsorAdmin.bps()).to.equal(500)
+      expect(await DSponsorAdmin.feeRecipient()).to.equal(user2Addr)
+      expect(await DSponsorAdmin.feeBps()).to.equal(500)
     })
 
     it('Should revert if fee recipient is ZERO_ADDRESS', async function () {
@@ -879,7 +879,7 @@ describe('DSponsorAdmin', function () {
         ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientBalance')
 
         expect(
-          await ERC20Mock.balanceOf(await DSponsorAdmin.recipient())
+          await ERC20Mock.balanceOf(await DSponsorAdmin.feeRecipient())
         ).to.equal(0)
       })
 
@@ -887,7 +887,7 @@ describe('DSponsorAdmin', function () {
         await loadFixture(deployFixture)
 
         const balanceBeforeCall = await provider.getBalance(
-          await DSponsorAdmin.recipient()
+          await DSponsorAdmin.feeRecipient()
         )
 
         await expect(
@@ -907,7 +907,7 @@ describe('DSponsorAdmin', function () {
         ).to.revertedWithCustomError(DSponsorAdmin, 'InsufficientFunds')
 
         const balanceAfterCall = await provider.getBalance(
-          await DSponsorAdmin.recipient()
+          await DSponsorAdmin.feeRecipient()
         )
 
         expect(balanceAfterCall).to.equal(balanceBeforeCall)
@@ -1060,6 +1060,8 @@ describe('DSponsorAdmin', function () {
         creatorDescription:
           'SiBorg app enhances Twitter spaces listening experience',
         creatorImg: 'https://external-link-url.com/image.png',
+        creatorCategory: ['dApp', 'Social', 'Media'],
+        exposureCategory: ['DeFi', 'NFT', 'Crypto'],
         offerName: contractMetadata.name,
         offerDescription: 'Ad spaces for SiBorg search results',
         offerImg: 'https://external-link-url.com/image.png',
@@ -1211,7 +1213,7 @@ describe('DSponsorAdmin', function () {
        * 3. Mint a token and submit an ad proposal
        */
 
-      const fetchedBps = await DSponsorAdmin.connect(sponsor1).bps()
+      const fetchedBps = await DSponsorAdmin.connect(sponsor1).feeBps()
       const mintAmounts = (amount: bigint) => {
         const fee = (amount * fetchedBps) / BigInt('10000')
         const amountWithFee = amount + fee

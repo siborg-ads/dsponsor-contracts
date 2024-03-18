@@ -8,16 +8,19 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/IDSponsorMarketplace.sol";
 import "./lib/ERC2771ContextOwnable.sol";
 import "./lib/ProtocolFee.sol";
 
+/**
+ * @title DSponsorMarketplace
+ * @notice This contract is a marketplace for direct and auction listings of NFTs with ERC20 tokens as currency.
+ * A large part of the code is from Thirdweb's Marketplace V2 implementation - https://github.com/thirdweb-dev/contracts/blob/2fa9b0f73a6854e8ae96845da7f14436892f0634/contracts/prebuilts/marketplace-legacy/marketplace.md
+ */
 contract DSponsorMarketplace is
     IDSponsorMarketplace,
     ERC2771ContextOwnable,
     ProtocolFee,
-    AccessControl,
     IERC721Receiver,
     IERC1155Receiver
 {
@@ -25,22 +28,17 @@ contract DSponsorMarketplace is
                             State variables
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Only lister role holders can create listings, when listings are restricted by lister address.
-    bytes32 private constant LISTER_ROLE = keccak256("LISTER_ROLE");
-    /// @dev Only assets from NFT contracts with asset role can be listed, when listings are restricted by asset address.
-    bytes32 private constant ASSET_ROLE = keccak256("ASSET_ROLE");
-
     /// @dev Total number of listings ever created in the marketplace.
     uint256 public totalListings;
 
     /**
      *  @dev The amount of time added to an auction's 'endTime', if a bid is made within `timeBuffer`
-     *       seconds of the existing `endTime`. Default: 15 minutes.
+     *       seconds of the existing `endTime`.
      */
-    uint64 public timeBuffer;
+    uint64 public constant timeBuffer = 15 minutes;
 
-    /// @dev The minimum % increase required from the previous winning bid. Default: 5%.
-    uint64 public bidBufferBps;
+    /// @dev The minimum % increase required from the previous winning bid.
+    uint64 public bidBufferBps = 500; // 5%
 
     /*///////////////////////////////////////////////////////////////
                                 Mappings
@@ -72,27 +70,19 @@ contract DSponsorMarketplace is
     }
 
     /*///////////////////////////////////////////////////////////////
-                    Constructor + initializer logic
+                                Constructor 
     //////////////////////////////////////////////////////////////*/
 
     constructor(
         address forwarder,
         address initialOwner,
         UniV3SwapRouter _swapRouter,
-        address _recipient,
+        address payable _recipient,
         uint96 _bps
     )
         ERC2771ContextOwnable(forwarder, initialOwner)
         ProtocolFee(_swapRouter, _recipient, _bps)
-    {
-        // Initialize this contract's state.
-        timeBuffer = 15 minutes;
-        bidBufferBps = 500;
-
-        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
-        _grantRole(LISTER_ROLE, address(0));
-        _grantRole(ASSET_ROLE, address(0));
-    }
+    {}
 
     /*///////////////////////////////////////////////////////////////
                         ERC 165 / 721 / 1155 logic
@@ -129,11 +119,10 @@ contract DSponsorMarketplace is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(AccessControl, IERC165) returns (bool) {
+    ) public view virtual override(IERC165) returns (bool) {
         return
             interfaceId == type(IERC1155Receiver).interfaceId ||
-            interfaceId == type(IERC721Receiver).interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == type(IERC721Receiver).interfaceId;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -154,16 +143,6 @@ contract DSponsorMarketplace is
         );
 
         require(tokenAmountToList > 0, "QUANTITY");
-        require(
-            hasRole(LISTER_ROLE, address(0)) ||
-                hasRole(LISTER_ROLE, _msgSender()),
-            "!LISTER"
-        );
-        require(
-            hasRole(ASSET_ROLE, address(0)) ||
-                hasRole(ASSET_ROLE, _params.assetContract),
-            "!ASSET"
-        );
 
         uint256 startTime = _params.startTime;
         if (startTime < block.timestamp) {
@@ -325,17 +304,60 @@ contract DSponsorMarketplace is
     }
 
     /*///////////////////////////////////////////////////////////////
-                    Direct lisitngs sales logic
+                    Direct listings sales logic
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Lets an account buy a given quantity of tokens from a listing.
+    /// @dev Buy from several listings in one transaction.
     function buy(
+        BuyParams[] calldata _buyParams
+    ) external override nonReentrant {
+        for (uint256 i = 0; i < _buyParams.length; i++) {
+            BuyParams memory buyParams = _buyParams[i];
+            _buy(
+                buyParams.listingId,
+                buyParams.buyFor,
+                buyParams.quantity,
+                buyParams.currency,
+                buyParams.totalPrice,
+                buyParams.referralAdditionalInformation
+            );
+        }
+    }
+
+    /**
+     * @dev Buy from a single listing, with the option to pay with native currency
+     * (to allow payment with delegated payment systems, payment by credit card)
+     */
+    function buy(
+        BuyParams calldata buyParams
+    ) external payable override nonReentrant {
+        if (msg.value > 0) {
+            // Swap native currency to ERC20 if value is sent
+            _swapNativeToERC20(
+                buyParams.currency,
+                buyParams.totalPrice,
+                buyParams.buyFor // refund to "spender", as _msgSender() can be the address of a delegating payment system
+            );
+        }
+        _buy(
+            buyParams.listingId,
+            buyParams.buyFor,
+            buyParams.quantity,
+            buyParams.currency,
+            buyParams.totalPrice,
+            buyParams.referralAdditionalInformation
+        );
+    }
+
+    /// @dev Lets an account buy a given quantity of tokens from a listing.
+    function _buy(
         uint256 _listingId,
         address _buyFor,
         uint256 _quantityToBuy,
         address _currency,
-        uint256 _totalPrice
-    ) external payable override nonReentrant onlyExistingListing(_listingId) {
+        uint256 _totalPrice,
+        string memory referralAdditionalInformation
+    ) internal onlyExistingListing(_listingId) {
         Listing memory targetListing = listings[_listingId];
         address payer = _msgSender();
 
@@ -347,13 +369,23 @@ contract DSponsorMarketplace is
             "!PRICE"
         );
 
+        ReferralRevenue memory referral = ReferralRevenue({
+            enabler: targetListing.tokenOwner,
+            spender: _buyFor,
+            additionalInformation: referralAdditionalInformation
+        });
+
+        uint256 currencyAmountToTransfer = _totalPrice;
+        targetListing.buyoutPricePerToken * _quantityToBuy;
+
         executeSale(
             targetListing,
             payer,
             _buyFor,
             targetListing.currency,
-            targetListing.buyoutPricePerToken * _quantityToBuy,
-            _quantityToBuy
+            currencyAmountToTransfer,
+            _quantityToBuy,
+            referral
         );
     }
 
@@ -382,13 +414,20 @@ contract DSponsorMarketplace is
 
         delete offers[_listingId][_offeror];
 
+        ReferralRevenue memory referral = ReferralRevenue({
+            enabler: targetListing.tokenOwner,
+            spender: _offeror,
+            additionalInformation: targetOffer.referralAdditionalInformation
+        });
+
         executeSale(
             targetListing,
             _offeror,
             _offeror,
             targetOffer.currency,
             targetOffer.pricePerToken * targetOffer.quantityWanted,
-            targetOffer.quantityWanted
+            targetOffer.quantityWanted,
+            referral
         );
     }
 
@@ -399,14 +438,12 @@ contract DSponsorMarketplace is
         address _receiver,
         address _currency,
         uint256 _currencyAmountToTransfer,
-        uint256 _listingTokenAmountToTransfer
+        uint256 _listingTokenAmountToTransfer,
+        ReferralRevenue memory referral
     ) internal {
         validateDirectListingSale(
             _targetListing,
-            _payer,
-            _listingTokenAmountToTransfer,
-            _currency,
-            _currencyAmountToTransfer
+            _listingTokenAmountToTransfer
         );
 
         _targetListing.quantity -= _listingTokenAmountToTransfer;
@@ -417,7 +454,8 @@ contract DSponsorMarketplace is
             _targetListing.tokenOwner,
             _currency,
             _currencyAmountToTransfer,
-            _targetListing
+            _targetListing,
+            referral
         );
         transferListingTokens(
             _targetListing.tokenOwner,
@@ -446,8 +484,9 @@ contract DSponsorMarketplace is
         uint256 _quantityWanted,
         address _currency,
         uint256 _pricePerToken,
-        uint256 _expirationTimestamp
-    ) external payable override nonReentrant onlyExistingListing(_listingId) {
+        uint256 _expirationTimestamp,
+        string memory _referralAdditionalInformation
+    ) external override nonReentrant onlyExistingListing(_listingId) {
         Listing memory targetListing = listings[_listingId];
 
         require(
@@ -463,7 +502,8 @@ contract DSponsorMarketplace is
             quantityWanted: _quantityWanted,
             currency: _currency,
             pricePerToken: _pricePerToken,
-            expirationTimestamp: _expirationTimestamp
+            expirationTimestamp: _expirationTimestamp,
+            referralAdditionalInformation: _referralAdditionalInformation
         });
 
         if (targetListing.listingType == ListingType.Auction) {
@@ -482,10 +522,6 @@ contract DSponsorMarketplace is
 
             handleBid(targetListing, newOffer);
         } else if (targetListing.listingType == ListingType.Direct) {
-            // Prevent potentially lost/locked native token.
-            require(msg.value == 0, "no value needed");
-
-            // Offers to direct listings cannot be made directly in native tokens.
             newOffer.currency = _currency;
             newOffer.quantityWanted = getSafeQuantity(
                 targetListing.tokenType,
@@ -505,12 +541,6 @@ contract DSponsorMarketplace is
             _newOffer.quantityWanted <= _targetListing.quantity &&
                 _targetListing.quantity > 0,
             "insufficient tokens in listing."
-        );
-
-        validateERC20BalAndAllowance(
-            _newOffer.offeror,
-            _newOffer.currency,
-            _newOffer.pricePerToken * _newOffer.quantityWanted
         );
 
         offers[_targetListing.listingId][_newOffer.offeror] = _newOffer;
@@ -545,7 +575,7 @@ contract DSponsorMarketplace is
             _closeAuctionForBidder(_targetListing, _incomingBid);
         } else {
             /**
-             *      If there's an existng winning bid, incoming bid amount must be bid buffer % greater.
+             *      If there's an existing winning bid, incoming bid amount must be bid buffer % greater.
              *      Else, bid amount must be at least as great as reserve price
              */
             require(
@@ -569,30 +599,21 @@ contract DSponsorMarketplace is
 
         // Payout previous highest bid.
         if (currentWinningBid.offeror != address(0) && currentOfferAmount > 0) {
-            /*
-            TODO
-            CurrencyTransferLib.transferCurrencyWithWrapper(
-                _targetListing.currency,
+            _pay(
                 address(this),
                 currentWinningBid.offeror,
-                currentOfferAmount,
-                _nativeTokenWrapper
+                _targetListing.currency,
+                currentOfferAmount
             );
-            */
         }
 
         // Collect incoming bid
-        /*
-        TODO
-        CurrencyTransferLib.transferCurrencyWithWrapper(
-            _targetListing.currency,
+        _pay(
             _incomingBid.offeror,
             address(this),
-            incomingOfferAmount,
-            _nativeTokenWrapper
+            _incomingBid.currency,
+            incomingOfferAmount
         );
-        */
-
         emit NewOffer(
             _targetListing.listingId,
             _incomingBid.offeror,
@@ -701,12 +722,19 @@ contract DSponsorMarketplace is
         _winningBid.pricePerToken = 0;
         winningBid[_targetListing.listingId] = _winningBid;
 
+        ReferralRevenue memory referral = ReferralRevenue({
+            enabler: _targetListing.tokenOwner,
+            spender: _winningBid.offeror,
+            additionalInformation: _winningBid.referralAdditionalInformation
+        });
+
         payout(
             address(this),
             _targetListing.tokenOwner,
             _targetListing.currency,
             payoutAmount,
-            _targetListing
+            _targetListing,
+            referral
         );
 
         emit AuctionClosed(
@@ -782,12 +810,16 @@ contract DSponsorMarketplace is
         address _payee,
         address _currencyToUse,
         uint256 _totalPayoutAmount,
-        Listing memory _listing
+        Listing memory _listing,
+        ReferralRevenue memory referral
     ) internal {
+        // Pay protocol fee
+        uint256 protocolCut = getFeeAmount(_totalPayoutAmount);
+        _payFee(_payer, _currencyToUse, protocolCut, address(this), referral);
+
+        // Distribute royalties
         uint256 royaltyCut;
         address royaltyRecipient;
-
-        // Distribute royalties. See Sushiswap's https://github.com/sushiswap/shoyu/blob/master/contracts/base/BaseExchange.sol#L296
         try
             IERC2981(_listing.assetContract).royaltyInfo(
                 _listing.tokenId,
@@ -799,45 +831,14 @@ contract DSponsorMarketplace is
                 royaltyCut = royaltyFeeAmount;
             }
         } catch {}
+        _pay(_payer, royaltyRecipient, _currencyToUse, royaltyCut);
 
-        /* 
-        TODO
-        CurrencyTransferLib.transferCurrencyWithWrapper(
-            _currencyToUse,
-            _payer,
-            platformFeeRecipient,
-            platformFeeCut,
-            _nativeTokenWrapper
-        );
-        CurrencyTransferLib.transferCurrencyWithWrapper(
-            _currencyToUse,
-            _payer,
-            royaltyRecipient,
-            royaltyCut,
-            _nativeTokenWrapper
-        );
-        CurrencyTransferLib.transferCurrencyWithWrapper(
-            _currencyToUse,
+        // Pay to the payee
+        _pay(
             _payer,
             _payee,
-            _totalPayoutAmount - (platformFeeCut + royaltyCut),
-            _nativeTokenWrapper
-        );
-        */
-    }
-
-    /// @dev Validates that `_addrToCheck` owns and has approved markeplace to transfer the appropriate amount of currency
-    function validateERC20BalAndAllowance(
-        address _addrToCheck,
-        address _currency,
-        uint256 _currencyAmountToCheckAgainst
-    ) internal view {
-        require(
-            IERC20(_currency).balanceOf(_addrToCheck) >=
-                _currencyAmountToCheckAgainst &&
-                IERC20(_currency).allowance(_addrToCheck, address(this)) >=
-                _currencyAmountToCheckAgainst,
-            "!BAL20"
+            _currencyToUse,
+            _totalPayoutAmount - protocolCut - royaltyCut
         );
     }
 
@@ -873,11 +874,8 @@ contract DSponsorMarketplace is
     /// @dev Validates conditions of a direct listing sale.
     function validateDirectListingSale(
         Listing memory _listing,
-        address _payer,
-        uint256 _quantityToBuy,
-        address _currency,
-        uint256 settledTotalPrice
-    ) internal {
+        uint256 _quantityToBuy
+    ) internal view {
         require(
             _listing.listingType == ListingType.Direct,
             "cannot buy from listing."
@@ -897,13 +895,6 @@ contract DSponsorMarketplace is
                 block.timestamp > _listing.startTime,
             "not within sale window."
         );
-
-        // Check: buyer owns and has approved sufficient currency for sale.
-        if (_currency == address(0)) {
-            require(msg.value == settledTotalPrice, "msg.value != price");
-        } else {
-            validateERC20BalAndAllowance(_payer, _currency, settledTotalPrice);
-        }
 
         // Check whether token owner owns and has approved `quantityToBuy` amount of listing tokens from the listing.
         validateOwnershipAndApproval(
@@ -950,23 +941,6 @@ contract DSponsorMarketplace is
         } else {
             revert("token must be ERC1155 or ERC721.");
         }
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                            Setter functions
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Lets a contract admin set auction buffers.
-    function setAuctionBuffers(
-        uint256 _timeBuffer,
-        uint256 _bidBufferBps
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_bidBufferBps < MAX_BPS, "invalid BPS.");
-
-        timeBuffer = uint64(_timeBuffer);
-        bidBufferBps = uint64(_bidBufferBps);
-
-        emit AuctionBuffersUpdated(_timeBuffer, _bidBufferBps);
     }
 
     /*///////////////////////////////////////////////////////////////

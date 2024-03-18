@@ -12,6 +12,7 @@ interface IProtocolFee {
         string additionalInformation;
     }
 
+    error CannotSendValueFromSender();
     error ExternalCallError();
     error InsufficientAllowance();
     error InsufficientFunds();
@@ -19,16 +20,18 @@ interface IProtocolFee {
     error ZeroAddress();
 
     event CallWithProtocolFee(
-        address indexed target,
+        address indexed origin,
         address indexed currency,
-        uint256 fee,
+        uint256 feeAmount,
         address enabler,
         address spender,
         string additionalInformation
     );
     event FeeUpdate(address recipient, uint96 bps);
 
-    function bps() external view returns (uint96);
+    function feeBps() external view returns (uint96);
 
-    function recipient() external view returns (address);
+    function feeRecipient() external view returns (address payable);
+
+    function getFeeAmount(uint256 baseAmount) external view returns (uint256);
 }

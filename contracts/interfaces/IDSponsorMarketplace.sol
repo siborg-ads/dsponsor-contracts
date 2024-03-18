@@ -19,6 +19,32 @@ interface IDSponsorMarketplace {
     }
 
     /**
+     *  @notice The information related to a direct listing buy.
+     *
+     *  @param listingId The uid of the direct listing to buy from.
+     *  @param buyFor The receiver of the NFT being bought.
+     *  @param quantity The amount of NFTs to buy from the direct listing.
+     *  @param currency The currency to pay the price in.
+     *  @param totalPrice The total price to pay for the tokens being bought.
+     *  @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
+     *
+     *  @dev A sale will fail to execute if either:
+     *          (1) buyer does not own or has not approved Marketplace to transfer the appropriate
+     *              amount of currency (or hasn't sent the appropriate amount of native tokens)
+     *
+     *          (2) the lister does not own or has removed Marketplace's
+     *              approval to transfer the tokens listed for sale.
+     */
+    struct BuyParams {
+        uint256 listingId;
+        address buyFor;
+        uint256 quantity;
+        address currency;
+        uint256 totalPrice;
+        string referralAdditionalInformation;
+    }
+
+    /**
      *  @notice The information related to either (1) an offer on a direct listing, or (2) a bid in an auction.
      *
      *  @dev The type of the listing at ID `lisingId` determines how the `Offer` is interpreted.
@@ -32,6 +58,7 @@ interface IDSponsorMarketplace {
      *  @param currency       The currency in which the offer is made.
      *  @param pricePerToken  The price per token offered to the lister.
      *  @param expirationTimestamp The timestamp after which a seller cannot accept this offer.
+     *  @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
     struct Offer {
         uint256 listingId;
@@ -40,6 +67,7 @@ interface IDSponsorMarketplace {
         address currency;
         uint256 pricePerToken;
         uint256 expirationTimestamp;
+        string referralAdditionalInformation;
     }
 
     /**
@@ -256,28 +284,14 @@ interface IDSponsorMarketplace {
     function cancelDirectListing(uint256 _listingId) external;
 
     /**
-     *  @notice Lets someone buy a given quantity of tokens from a direct listing by paying the fixed price.
-     *
-     *  @param _listingId The uid of the direct listing to buy from.
-     *  @param _buyFor The receiver of the NFT being bought.
-     *  @param _quantity The amount of NFTs to buy from the direct listing.
-     *  @param _currency The currency to pay the price in.
-     *  @param _totalPrice The total price to pay for the tokens being bought.
-     *
-     *  @dev A sale will fail to execute if either:
-     *          (1) buyer does not own or has not approved Marketplace to transfer the appropriate
-     *              amount of currency (or hasn't sent the appropriate amount of native tokens)
-     *
-     *          (2) the lister does not own or has removed Marketplace's
-     *              approval to transfer the tokens listed for sale.
+     *  @notice Lets someone from multiple items from direct listings (fixed prices)
      */
-    function buy(
-        uint256 _listingId,
-        address _buyFor,
-        uint256 _quantity,
-        address _currency,
-        uint256 _totalPrice
-    ) external payable;
+    function buy(BuyParams[] calldata params) external;
+
+    /**
+     *  @notice Lets someone from a direct listing (fixed prices)
+     */
+    function buy(BuyParams calldata params) external payable;
 
     /**
      *  @notice Lets someone make an offer to a direct listing, or bid in an auction.
@@ -302,14 +316,16 @@ interface IDSponsorMarketplace {
      *
      *  @param _expirationTimestamp For auction listings: inapplicable. For direct listings: The timestamp after which
      *                              the seller can no longer accept the offer.
+     *  @param _referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
     function offer(
         uint256 _listingId,
         uint256 _quantityWanted,
         address _currency,
         uint256 _pricePerToken,
-        uint256 _expirationTimestamp
-    ) external payable;
+        uint256 _expirationTimestamp,
+        string memory _referralAdditionalInformation
+    ) external;
 
     /**
      * @notice Lets a listing's creator accept an offer to their direct listing.
