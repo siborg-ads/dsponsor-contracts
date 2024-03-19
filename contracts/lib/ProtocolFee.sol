@@ -9,6 +9,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 
+interface WETH {
+    function deposit() external payable;
+
+    function withdraw(uint256 wad) external;
+}
+
 interface UniV3SwapRouter is ISwapRouter, IPeripheryPayments {
     function WETH9() external view returns (address);
 }
@@ -188,30 +194,35 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
         uint256 amount,
         address recipientRefund
     ) internal returns (uint256 amountOut) {
-        uint256 balanceBeforeSwap = address(this).balance - msg.value;
+        address weth = swapRouter.WETH9();
+        if (currency == weth) {
+            WETH(weth).deposit{value: msg.value}();
+        } else {
+            uint256 balanceBeforeSwap = address(this).balance - msg.value;
 
-        // perform the swap
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
-            .ExactOutputSingleParams({
-                tokenIn: swapRouter.WETH9(),
-                tokenOut: currency,
-                fee: 3000,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountOut: amount,
-                amountInMaximum: msg.value,
-                sqrtPriceLimitX96: 0
-            });
-        amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
+            // perform the swap
+            ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
+                .ExactOutputSingleParams({
+                    tokenIn: weth,
+                    tokenOut: currency,
+                    fee: 3000,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountOut: amount,
+                    amountInMaximum: msg.value,
+                    sqrtPriceLimitX96: 0
+                });
+            amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
 
-        // refund the remaining native currency
-        swapRouter.refundETH();
-        uint256 balanceAfterSwap = address(this).balance;
-        if (balanceAfterSwap > balanceBeforeSwap) {
-            Address.sendValue(
-                payable(recipientRefund),
-                balanceAfterSwap - balanceBeforeSwap
-            );
+            // refund the remaining native currency
+            swapRouter.refundETH();
+            uint256 balanceAfterSwap = address(this).balance;
+            if (balanceAfterSwap > balanceBeforeSwap) {
+                Address.sendValue(
+                    payable(recipientRefund),
+                    balanceAfterSwap - balanceBeforeSwap
+                );
+            }
         }
     }
 

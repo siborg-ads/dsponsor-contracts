@@ -61,6 +61,8 @@ describe('DSponsorAdmin', function () {
 
   const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 
+  let WethAddr = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC on Polygon
+  let WethContract: ERC20
   let USDCeAddr = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
   let USDCeContract: ERC20
 
@@ -102,6 +104,7 @@ describe('DSponsorAdmin', function () {
     treasuryAddr = await treasury.getAddress()
 
     USDCeContract = await ethers.getContractAt('ERC20', USDCeAddr)
+    WethContract = await ethers.getContractAt('ERC20', WethAddr)
 
     forwarder = await ethers.deployContract('ERC2771Forwarder', [])
     await forwarder.waitForDeployment()
@@ -131,8 +134,8 @@ describe('DSponsorAdmin', function () {
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 100, // 1%
-      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr],
-      prices: [ERC20Amount, valuePrice, USDCePrice],
+      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr, WethAddr],
+      prices: [ERC20Amount, valuePrice, USDCePrice, valuePrice],
       allowedTokenIds: []
     }
 
@@ -687,7 +690,75 @@ describe('DSponsorAdmin', function () {
         )
       })
 
-      it('Should work with a valid swap', async function () {
+      it('Should work with a wrapping swap', async function () {
+        await loadFixture(deployFixture)
+
+        const fee = (valuePrice * BigInt(bps.toString())) / BigInt('10000')
+        const value = valuePrice + fee
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeTokenBalances(
+          WethContract,
+          [user, owner, treasury, DSponsorAdmin],
+          [0, valuePrice, fee, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeEtherBalances(
+          [user, owner, treasury, DSponsorAdmin],
+          [-value, 0, 0, 0]
+        )
+      })
+
+      it('Should work with a valid ERC20 swap', async function () {
         await loadFixture(deployFixture)
 
         const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
@@ -777,7 +848,7 @@ describe('DSponsorAdmin', function () {
               adDatas,
               referralAdditionalInformation
             },
-            { value: parseEther('0.01') }
+            { value: 10 }
           )
         ).to.reverted
       })
