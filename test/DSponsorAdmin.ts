@@ -1335,11 +1335,8 @@ describe('DSponsorAdmin', function () {
         currency: currencies[1],
         tokenData: tokenizedKeywords[1],
         offerId: siborgOfferId,
-        adParameters: [adParameters[0], adParameters[1]],
-        adDatas: [
-          'https://www.ethforever.com',
-          'ipfs://ipfshash/ethever-img5:1.png'
-        ],
+        adParameters: [], // no ad data submitted
+        adDatas: [],
         referralAdditionalInformation
       }
       await ERC20Mock.connect(sponsor2).approve(

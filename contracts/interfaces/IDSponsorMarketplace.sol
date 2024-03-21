@@ -45,28 +45,19 @@ interface IDSponsorMarketplace {
     }
 
     /**
-     *  @notice The information related to either (1) an offer on a direct listing, or (2) a bid in an auction.
+     *  @notice The information related to a bid in an auction.
      *
-     *  @dev The type of the listing at ID `lisingId` determines how the `Offer` is interpreted.
-     *      If the listing is of type `Direct`, the `Offer` is interpreted as an offer to a direct listing.
-     *      If the listing is of type `Auction`, the `Offer` is interpreted as a bid in an auction.
-     *
-     *  @param listingId      The uid of the listing the offer is made to.
-     *  @param offeror        The account making the offer.
-     *  @param quantityWanted The quantity of tokens from the listing wanted by the offeror.
-     *                        This is the entire listing quantity if the listing is an auction.
-     *  @param currency       The currency in which the offer is made.
-     *  @param pricePerToken  The price per token offered to the lister.
-     *  @param expirationTimestamp The timestamp after which a seller cannot accept this offer.
+     *  @param listingId      The uid of the listing the bid is made to.
+     *  @param offeror        The account making the bid.
+     *  @param quantityWanted The entire listing quantity
+     *  @param currency       The currency in which the bid is made.
+     *  @param pricePerToken  The price per token bidded to the lister.
      *  @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
-    struct Offer {
+    struct Bid {
         uint256 listingId;
         address offeror;
-        uint256 quantityWanted;
-        address currency;
         uint256 pricePerToken;
-        uint256 expirationTimestamp;
         string referralAdditionalInformation;
     }
 
@@ -192,8 +183,7 @@ interface IDSponsorMarketplace {
     );
 
     /**
-     * @dev Emitted when a buyer buys from a direct listing, or a lister accepts some
-     *      buyer's offer to their direct listing.
+     * @dev Emitted when a buyer buys from a direct listing
      */
     event NewSale(
         uint256 indexed listingId,
@@ -204,11 +194,10 @@ interface IDSponsorMarketplace {
         uint256 totalPricePaid
     );
 
-    /// @dev Emitted when (1) a new offer is made to a direct listing, or (2) when a new bid is made in an auction.
-    event NewOffer(
+    /// @dev Emitted when a new bid is made in an auction.
+    event NewBid(
         uint256 indexed listingId,
         address indexed offeror,
-        ListingType indexed listingType,
         uint256 quantityWanted,
         uint256 totalOfferAmount,
         address currency
@@ -294,51 +283,21 @@ interface IDSponsorMarketplace {
     function buy(BuyParams calldata params) external payable;
 
     /**
-     *  @notice Lets someone make an offer to a direct listing, or bid in an auction.
+     *  @notice Lets someone make an bid in an auction.
      *
-     *  @dev Each (address, listing ID) pair maps to a single unique offer. So e.g. if a buyer makes
-     *       makes two offers to the same direct listing, the last offer is counted as the buyer's
-     *       offer to that listing.
+     *  @dev Each (address, listing ID) pair maps to a single unique bid. So e.g. if a buyer makes
+     *       makes two bids to the same direct listing, the last bid is counted as the buyer's
+     *       bid to that listing.
      *
-     *  @param _listingId        The unique ID of the listing to make an offer/bid to.
-     *
-     *  @param _quantityWanted   For auction listings: the 'quantity wanted' is the total amount of NFTs
-     *                           being auctioned, regardless of the value of `_quantityWanted` passed.
-     *                           For direct listings: `_quantityWanted` is the quantity of NFTs from the
-     *                           listing, for which the offer is being made.
-     *
-     *  @param _currency         For auction listings: the 'currency of the bid' is the currency accepted
-     *                           by the auction, regardless of the value of `_currency` passed. For direct
-     *                           listings: this is the currency in which the offer is made.
-     *
-     *  @param _pricePerToken    For direct listings: offered price per token. For auction listings: the bid
-     *                           amount per token. The total offer/bid amount is `_quantityWanted * _pricePerToken`.
-     *
-     *  @param _expirationTimestamp For auction listings: inapplicable. For direct listings: The timestamp after which
-     *                              the seller can no longer accept the offer.
+     *  @param _listingId        The unique ID of the listing to make an bid to.
+     *  @param _pricePerToken    The bid amount per token.
+     *                           The total bid amount is `listings[_listingId].quantity * _pricePerToken`.
      *  @param _referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
-    function offer(
+    function bid(
         uint256 _listingId,
-        uint256 _quantityWanted,
-        address _currency,
         uint256 _pricePerToken,
-        uint256 _expirationTimestamp,
         string memory _referralAdditionalInformation
-    ) external;
-
-    /**
-     * @notice Lets a listing's creator accept an offer to their direct listing.
-     * @param _listingId The unique ID of the listing for which to accept the offer.
-     * @param _offeror The address of the buyer whose offer is to be accepted.
-     * @param _currency The currency of the offer that is to be accepted.
-     * @param _totalPrice The total price of the offer that is to be accepted.
-     */
-    function acceptOffer(
-        uint256 _listingId,
-        address _offeror,
-        address _currency,
-        uint256 _totalPrice
     ) external;
 
     /**
