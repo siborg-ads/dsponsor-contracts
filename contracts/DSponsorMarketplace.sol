@@ -14,8 +14,8 @@ import "./lib/ProtocolFee.sol";
 
 /**
  * @title DSponsorMarketplace
- * @notice This contract is a marketplace for direct and auction listings of NFTs with ERC20 tokens as currency.
- * A large part of the code is from Thirdweb's Marketplace V2 implementation - https://github.com/thirdweb-dev/contracts/blob/2fa9b0f73a6854e8ae96845da7f14436892f0634/contracts/prebuilts/marketplace-legacy/marketplace.md
+ * @notice This contract is a marketplace for offers, direct and auction listings of NFTs with ERC20 tokens as currency.
+ * A large part of the code is from Thirdweb's Marketplace implementation
  */
 contract DSponsorMarketplace is
     IDSponsorMarketplace,
@@ -25,30 +25,35 @@ contract DSponsorMarketplace is
     IERC1155Receiver
 {
     /*///////////////////////////////////////////////////////////////
+                            Constants
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     *  @dev The amount of time added to an auction's 'endTime', if a bid is made within `timeBuffer`
+     *       seconds of the existing `endTime`.
+     */
+    uint128 public constant timeBuffer = 15 minutes;
+
+    /// @dev The minimum % increase required from the previous winning bid.
+    uint128 public constant bidBufferBps = 500; // 5%
+
+    /*///////////////////////////////////////////////////////////////
                             State variables
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Total number of listings ever created in the marketplace.
     uint256 public totalListings;
 
-    /**
-     *  @dev The amount of time added to an auction's 'endTime', if a bid is made within `timeBuffer`
-     *       seconds of the existing `endTime`.
-     */
-    uint64 public constant timeBuffer = 15 minutes;
-
-    /// @dev The minimum % increase required from the previous winning bid.
-    uint64 public bidBufferBps = 500; // 5%
-
-    /*///////////////////////////////////////////////////////////////
-                                Mappings
-    //////////////////////////////////////////////////////////////*/
+    /// @dev Total number of offers ever created in the marketplace.
+    uint256 public totalOffers;
 
     /// @dev Mapping from uid of listing => listing info.
     mapping(uint256 => Listing) public listings;
 
     /// @dev Mapping from uid of an auction listing => current winning bid in an auction.
     mapping(uint256 => Bid) public winningBid;
+
+    mapping(uint256 => Offer) public offers;
 
     /*///////////////////////////////////////////////////////////////
                                 Modifiers
@@ -63,6 +68,21 @@ contract DSponsorMarketplace is
     /// @dev Checks whether a listing exists.
     modifier onlyExistingListing(uint256 _listingId) {
         require(listings[_listingId].assetContract != address(0), "DNE");
+        _;
+    }
+
+    /// @dev Checks whether caller is a offer creator.
+    modifier onlyOfferor(uint256 _offerId) {
+        require(offers[_offerId].offeror == _msgSender(), "!Offeror");
+        _;
+    }
+
+    /// @dev Checks whether an auction exists.
+    modifier onlyExistingOffer(uint256 _offerId) {
+        require(
+            offers[_offerId].status == Status.CREATED,
+            "Marketplace: invalid offer."
+        );
         _;
     }
 
@@ -304,10 +324,34 @@ contract DSponsorMarketplace is
                     Direct listings sales logic
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Buy from several listings in one transaction.
-    function buy(BuyParams[] calldata _buyParams) external nonReentrant {
+    /**
+     *  @dev Buy from several listings in one transaction, with the option to pay with native currency
+     * (to allow payment with delegated payment systems, payment by credit card)
+     */
+    function buy(
+        BuyParams[] calldata _buyParams
+    ) external payable nonReentrant {
+        uint256 remainingToSpendInSwap = msg.value;
+
         for (uint256 i = 0; i < _buyParams.length; i++) {
             BuyParams memory buyParams = _buyParams[i];
+
+            // Swap native currency to ERC20 if value is sent
+            if (remainingToSpendInSwap > 0) {
+                // refund to "spender" once all swaps done, to _msgSender() can be the address of a delegating payment system
+                address recipientRefund = i == _buyParams.length - 1
+                    ? buyParams.buyFor
+                    : address(this);
+
+                (, uint256 amountRefunded) = _swapNativeToERC20(
+                    buyParams.currency,
+                    buyParams.totalPrice,
+                    remainingToSpendInSwap,
+                    recipientRefund
+                );
+                remainingToSpendInSwap = amountRefunded;
+            }
+
             _buy(
                 buyParams.listingId,
                 buyParams.buyFor,
@@ -329,6 +373,7 @@ contract DSponsorMarketplace is
             _swapNativeToERC20(
                 buyParams.currency,
                 buyParams.totalPrice,
+                msg.value,
                 buyParams.buyFor // refund to "spender", as _msgSender() can be the address of a delegating payment system
             );
         }
@@ -352,8 +397,6 @@ contract DSponsorMarketplace is
         string memory referralAdditionalInformation
     ) internal onlyExistingListing(_listingId) {
         Listing memory targetListing = listings[_listingId];
-        address payer = _msgSender();
-        address tokenOwner = targetListing.tokenOwner;
 
         // Check whether the settled total price and currency to use are correct.
         require(
@@ -363,30 +406,53 @@ contract DSponsorMarketplace is
             "!PRICE"
         );
 
+        require(targetListing.listingType == ListingType.Direct, "!DIRECT");
+
+        // Check whether a valid quantity of listed tokens is being bought.
+        require(
+            targetListing.quantity > 0 &&
+                _quantityToBuy > 0 &&
+                _quantityToBuy <= targetListing.quantity,
+            "invalid amount of tokens."
+        );
+
+        // Check if sale is made within the listing window.
+        require(
+            block.timestamp < targetListing.endTime &&
+                block.timestamp > targetListing.startTime,
+            "not within sale window."
+        );
+
+        // Check whether token owner owns and has approved `quantityToBuy` amount of listing tokens from the listing.
+        _validateOwnershipAndApproval(
+            targetListing.tokenOwner,
+            targetListing.assetContract,
+            targetListing.tokenId,
+            _quantityToBuy,
+            targetListing.tokenType
+        );
+
         ReferralRevenue memory referral = ReferralRevenue({
             enabler: targetListing.tokenOwner,
             spender: _buyFor,
             additionalInformation: referralAdditionalInformation
         });
 
-        uint256 currencyAmountToTransfer = _totalPrice;
-        targetListing.buyoutPricePerToken * _quantityToBuy;
-
-        _validateDirectListingSale(targetListing, _quantityToBuy);
-
         targetListing.quantity -= _quantityToBuy;
         listings[_listingId] = targetListing;
 
         _payout(
-            payer,
-            tokenOwner,
+            _msgSender(),
+            targetListing.tokenOwner,
             _currency,
-            currencyAmountToTransfer,
-            targetListing,
+            _totalPrice,
+            targetListing.assetContract,
+            targetListing.tokenId,
             referral
         );
+
         _transferListingTokens(
-            tokenOwner,
+            targetListing.tokenOwner,
             _buyFor,
             _quantityToBuy,
             targetListing
@@ -395,10 +461,10 @@ contract DSponsorMarketplace is
         emit NewSale(
             _listingId,
             targetListing.assetContract,
-            tokenOwner,
+            targetListing.tokenOwner,
             _buyFor,
             _quantityToBuy,
-            currencyAmountToTransfer
+            _totalPrice
         );
     }
 
@@ -439,7 +505,7 @@ contract DSponsorMarketplace is
 
         Bid memory newBid = Bid({
             listingId: _listingId,
-            offeror: _msgSender(),
+            bidder: _msgSender(),
             pricePerToken: _pricePerToken,
             referralAdditionalInformation: _referralAdditionalInformation
         });
@@ -479,21 +545,21 @@ contract DSponsorMarketplace is
         }
 
         // Payout previous highest bid.
-        if (currentWinningBid.offeror != address(0) && currentBidAmount > 0) {
+        if (currentWinningBid.bidder != address(0) && currentBidAmount > 0) {
             _pay(
                 address(this),
-                currentWinningBid.offeror,
+                currentWinningBid.bidder,
                 targetListing.currency,
                 currentBidAmount
             );
         }
 
         // Collect incoming bid
-        _pay(newBid.offeror, address(this), currency, incomingBidAmount);
+        _pay(newBid.bidder, address(this), currency, incomingBidAmount);
 
         emit NewBid(
             targetListing.listingId,
-            newBid.offeror,
+            newBid.bidder,
             quantity,
             incomingBidAmount,
             currency
@@ -520,7 +586,7 @@ contract DSponsorMarketplace is
 
         // Cancel auction if (1) auction hasn't started, or (2) auction doesn't have any bids.
         bool toCancel = targetListing.startTime > block.timestamp ||
-            targetBid.offeror == address(0);
+            targetBid.bidder == address(0);
 
         if (toCancel) {
             // cancel auction listing owner check
@@ -531,12 +597,12 @@ contract DSponsorMarketplace is
                 "cannot close auction before it has ended."
             );
 
-            // No `else if` to let auction close in 1 tx when targetListing.tokenOwner == targetBid.offeror.
+            // No `else if` to let auction close in 1 tx when targetListing.tokenOwner == targetBid.bidder.
             if (_closeFor == targetListing.tokenOwner) {
                 _closeAuctionForAuctionCreator(targetListing, targetBid);
             }
 
-            if (_closeFor == targetBid.offeror) {
+            if (_closeFor == targetBid.bidder) {
                 _closeAuctionForBidder(targetListing, targetBid);
             }
         }
@@ -584,7 +650,7 @@ contract DSponsorMarketplace is
 
         ReferralRevenue memory referral = ReferralRevenue({
             enabler: _targetListing.tokenOwner,
-            spender: _winningBid.offeror,
+            spender: _winningBid.bidder,
             additionalInformation: _winningBid.referralAdditionalInformation
         });
 
@@ -593,7 +659,8 @@ contract DSponsorMarketplace is
             _targetListing.tokenOwner,
             _targetListing.currency,
             payoutAmount,
-            _targetListing,
+            _targetListing.assetContract,
+            _targetListing.tokenId,
             referral
         );
 
@@ -602,7 +669,7 @@ contract DSponsorMarketplace is
             _msgSender(),
             false,
             _targetListing.tokenOwner,
-            _winningBid.offeror
+            _winningBid.bidder
         );
     }
 
@@ -611,17 +678,14 @@ contract DSponsorMarketplace is
         Listing memory _targetListing,
         Bid memory _winningBid
     ) internal {
-        uint256 quantityToSend = _targetListing.quantity;
-
         _targetListing.endTime = block.timestamp;
-
         winningBid[_targetListing.listingId] = _winningBid;
         listings[_targetListing.listingId] = _targetListing;
 
         _transferListingTokens(
             address(this),
-            _winningBid.offeror,
-            quantityToSend,
+            _winningBid.bidder,
+            _targetListing.quantity,
             _targetListing
         );
 
@@ -630,12 +694,201 @@ contract DSponsorMarketplace is
             _msgSender(),
             false,
             _targetListing.tokenOwner,
-            _winningBid.offeror
+            _winningBid.bidder
         );
     }
 
     /*///////////////////////////////////////////////////////////////
-            Shared (direct+auction listings) internal functions
+                    Offers logic
+    //////////////////////////////////////////////////////////////*/
+
+    function makeOffer(
+        OfferParams memory _params
+    ) external returns (uint256 _offerId) {
+        _offerId = totalOffers;
+        totalOffers += 1;
+        address _offeror = _msgSender();
+        TokenType _tokenType = _getTokenType(_params.assetContract);
+
+        _validateNewOffer(_params, _tokenType);
+
+        Offer memory _offer = Offer({
+            offerId: _offerId,
+            offeror: _offeror,
+            assetContract: _params.assetContract,
+            tokenId: _params.tokenId,
+            tokenType: _tokenType,
+            quantity: _params.quantity,
+            currency: _params.currency,
+            totalPrice: _params.totalPrice,
+            expirationTimestamp: _params.expirationTimestamp,
+            status: Status.CREATED,
+            referralAdditionalInformation: _params.referralAdditionalInformation
+        });
+
+        offers[_offerId] = _offer;
+
+        emit NewOffer(_offeror, _offerId, _params.assetContract, _offer);
+    }
+
+    function cancelOffer(
+        uint256 _offerId
+    ) external onlyExistingOffer(_offerId) onlyOfferor(_offerId) {
+        offers[_offerId].status = Status.CANCELLED;
+
+        emit CancelledOffer(_msgSender(), _offerId);
+    }
+
+    function acceptOffer(
+        uint256 _offerId
+    ) external nonReentrant onlyExistingOffer(_offerId) {
+        Offer memory _targetOffer = offers[_offerId];
+
+        require(_targetOffer.expirationTimestamp > block.timestamp, "EXPIRED");
+
+        require(
+            _validateERC20BalAndAllowance(
+                _targetOffer.offeror,
+                _targetOffer.currency,
+                _targetOffer.totalPrice
+            ),
+            "Marketplace: insufficient currency balance."
+        );
+
+        _validateOwnershipAndApproval(
+            _msgSender(),
+            _targetOffer.assetContract,
+            _targetOffer.tokenId,
+            _targetOffer.quantity,
+            _targetOffer.tokenType
+        );
+
+        offers[_offerId].status = Status.COMPLETED;
+
+        ReferralRevenue memory referral = ReferralRevenue({
+            enabler: _msgSender(),
+            spender: _targetOffer.offeror,
+            additionalInformation: _targetOffer.referralAdditionalInformation
+        });
+
+        _payout(
+            _targetOffer.offeror,
+            _msgSender(),
+            _targetOffer.currency,
+            _targetOffer.totalPrice,
+            _targetOffer.assetContract,
+            _targetOffer.tokenId,
+            referral
+        );
+        _transferOfferTokens(
+            _msgSender(),
+            _targetOffer.offeror,
+            _targetOffer.quantity,
+            _targetOffer
+        );
+
+        emit AcceptedOffer(
+            _targetOffer.offeror,
+            _targetOffer.offerId,
+            _targetOffer.assetContract,
+            _targetOffer.tokenId,
+            _msgSender(),
+            _targetOffer.quantity,
+            _targetOffer.totalPrice
+        );
+    }
+
+    /// @dev Returns existing offer with the given uid.
+    function getOffer(
+        uint256 _offerId
+    ) external view returns (Offer memory _offer) {
+        _offer = offers[_offerId];
+    }
+
+    /// @dev Returns all existing offers within the specified range.
+    function getAllOffers(
+        uint256 _startId,
+        uint256 _endId
+    ) external view returns (Offer[] memory _allOffers) {
+        require(_startId <= _endId && _endId < totalOffers, "invalid range");
+
+        _allOffers = new Offer[](_endId - _startId + 1);
+
+        for (uint256 i = _startId; i <= _endId; i += 1) {
+            _allOffers[i - _startId] = offers[i];
+        }
+    }
+
+    /// @dev Returns offers within the specified range, where offeror has sufficient balance.
+    function getAllValidOffers(
+        uint256 _startId,
+        uint256 _endId
+    ) external view returns (Offer[] memory _validOffers) {
+        require(_startId <= _endId && _endId < totalOffers, "invalid range");
+
+        Offer[] memory _offers = new Offer[](_endId - _startId + 1);
+        uint256 _offerCount;
+
+        for (uint256 i = _startId; i <= _endId; i += 1) {
+            uint256 j = i - _startId;
+            _offers[j] = offers[i];
+            if (_validateExistingOffer(_offers[j])) {
+                _offerCount += 1;
+            }
+        }
+
+        _validOffers = new Offer[](_offerCount);
+        uint256 index = 0;
+        uint256 count = _offers.length;
+        for (uint256 i = 0; i < count; i += 1) {
+            if (_validateExistingOffer(_offers[i])) {
+                _validOffers[index++] = _offers[i];
+            }
+        }
+    }
+
+    /// @dev Checks whether the auction creator owns and has approved marketplace to transfer auctioned tokens.
+    function _validateNewOffer(
+        OfferParams memory _params,
+        TokenType _tokenType
+    ) internal view {
+        require(_params.totalPrice > 0, "zero price.");
+        require(_params.quantity > 0, "Marketplace: wanted zero tokens.");
+        require(
+            _params.quantity == 1 || _tokenType == TokenType.ERC1155,
+            "Marketplace: wanted invalid quantity."
+        );
+        require(
+            _params.expirationTimestamp + 60 minutes > block.timestamp,
+            "Marketplace: invalid expiration timestamp."
+        );
+
+        require(
+            _validateERC20BalAndAllowance(
+                _msgSender(),
+                _params.currency,
+                _params.totalPrice
+            ),
+            "Marketplace: insufficient currency balance."
+        );
+    }
+
+    /// @dev Checks whether the offer exists, is active, and if the offeror has sufficient balance.
+    function _validateExistingOffer(
+        Offer memory _targetOffer
+    ) internal view returns (bool isValid) {
+        isValid =
+            _targetOffer.expirationTimestamp > block.timestamp &&
+            _targetOffer.status == Status.CREATED &&
+            _validateERC20BalAndAllowance(
+                _targetOffer.offeror,
+                _targetOffer.currency,
+                _targetOffer.totalPrice
+            );
+    }
+
+    /*///////////////////////////////////////////////////////////////
+            Shared internal functions
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Transfers tokens listed for sale in a direct or auction listing.
@@ -663,13 +916,39 @@ contract DSponsorMarketplace is
         }
     }
 
+    /// @dev Transfers tokens.
+    function _transferOfferTokens(
+        address _from,
+        address _to,
+        uint256 _quantity,
+        Offer memory _offer
+    ) internal {
+        if (_offer.tokenType == TokenType.ERC1155) {
+            IERC1155(_offer.assetContract).safeTransferFrom(
+                _from,
+                _to,
+                _offer.tokenId,
+                _quantity,
+                ""
+            );
+        } else if (_offer.tokenType == TokenType.ERC721) {
+            IERC721(_offer.assetContract).safeTransferFrom(
+                _from,
+                _to,
+                _offer.tokenId,
+                ""
+            );
+        }
+    }
+
     /// @dev Pays out stakeholders in a sale.
     function _payout(
         address _payer,
         address _payee,
         address _currencyToUse,
         uint256 _totalPayoutAmount,
-        Listing memory _listing,
+        address _assetContract,
+        uint256 _tokenId,
         ReferralRevenue memory referral
     ) internal {
         // Pay protocol fee
@@ -680,10 +959,7 @@ contract DSponsorMarketplace is
         uint256 royaltyCut;
         address royaltyRecipient;
         try
-            IERC2981(_listing.assetContract).royaltyInfo(
-                _listing.tokenId,
-                _totalPayoutAmount
-            )
+            IERC2981(_assetContract).royaltyInfo(_tokenId, _totalPayoutAmount)
         returns (address royaltyFeeRecipient, uint256 royaltyFeeAmount) {
             if (royaltyFeeRecipient != address(0) && royaltyFeeAmount > 0) {
                 royaltyRecipient = royaltyFeeRecipient;
@@ -699,6 +975,17 @@ contract DSponsorMarketplace is
             _currencyToUse,
             _totalPayoutAmount - protocolCut - royaltyCut
         );
+    }
+
+    /// @dev Validates that `_tokenOwner` owns and has approved Markeplace to transfer the appropriate amount of currency
+    function _validateERC20BalAndAllowance(
+        address _tokenOwner,
+        address _currency,
+        uint256 _amount
+    ) internal view returns (bool isValid) {
+        isValid =
+            IERC20(_currency).balanceOf(_tokenOwner) >= _amount &&
+            IERC20(_currency).allowance(_tokenOwner, address(this)) >= _amount;
     }
 
     /// @dev Validates that `_tokenOwner` owns and has approved Market to transfer NFTs.
@@ -728,41 +1015,6 @@ contract DSponsorMarketplace is
         }
 
         require(isValid, "!BALNFT");
-    }
-
-    /// @dev Validates conditions of a direct listing sale.
-    function _validateDirectListingSale(
-        Listing memory _listing,
-        uint256 _quantityToBuy
-    ) internal view {
-        require(
-            _listing.listingType == ListingType.Direct,
-            "cannot buy from listing."
-        );
-
-        // Check whether a valid quantity of listed tokens is being bought.
-        require(
-            _listing.quantity > 0 &&
-                _quantityToBuy > 0 &&
-                _quantityToBuy <= _listing.quantity,
-            "invalid amount of tokens."
-        );
-
-        // Check if sale is made within the listing window.
-        require(
-            block.timestamp < _listing.endTime &&
-                block.timestamp > _listing.startTime,
-            "not within sale window."
-        );
-
-        // Check whether token owner owns and has approved `quantityToBuy` amount of listing tokens from the listing.
-        _validateOwnershipAndApproval(
-            _listing.tokenOwner,
-            _listing.assetContract,
-            _listing.tokenId,
-            _quantityToBuy,
-            _listing.tokenType
-        );
     }
 
     /*///////////////////////////////////////////////////////////////

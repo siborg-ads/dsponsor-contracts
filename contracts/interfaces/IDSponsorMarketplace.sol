@@ -2,10 +2,17 @@
 pragma solidity ^0.8.11;
 
 interface IDSponsorMarketplace {
-    /// @notice Type of the tokens that can be listed for sale.
     enum TokenType {
         ERC1155,
-        ERC721
+        ERC721,
+        ERC20
+    }
+
+    enum Status {
+        UNSET,
+        CREATED,
+        COMPLETED,
+        CANCELLED
     }
 
     /**
@@ -48,7 +55,7 @@ interface IDSponsorMarketplace {
      *  @notice The information related to a bid in an auction.
      *
      *  @param listingId      The uid of the listing the bid is made to.
-     *  @param offeror        The account making the bid.
+     *  @param bidder        The account making the bid.
      *  @param quantityWanted The entire listing quantity
      *  @param currency       The currency in which the bid is made.
      *  @param pricePerToken  The price per token bidded to the lister.
@@ -56,7 +63,7 @@ interface IDSponsorMarketplace {
      */
     struct Bid {
         uint256 listingId;
-        address offeror;
+        address bidder;
         uint256 pricePerToken;
         string referralAdditionalInformation;
     }
@@ -162,6 +169,56 @@ interface IDSponsorMarketplace {
         ListingType listingType;
     }
 
+    /**
+     *  @notice The parameters an offeror sets when making an offer for NFTs.
+     *
+     *  @param assetContract The contract of the NFTs for which the offer is being made.
+     *  @param tokenId The tokenId of the NFT for which the offer is being made.
+     *  @param quantity The quantity of NFTs wanted.
+     *  @param currency The currency offered for the NFTs.
+     *  @param totalPrice The total offer amount for the NFTs.
+     *  @param expirationTimestamp The timestamp at and after which the offer cannot be accepted.
+     * @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
+     */
+    struct OfferParams {
+        address assetContract;
+        uint256 tokenId;
+        uint256 quantity;
+        address currency;
+        uint256 totalPrice;
+        uint256 expirationTimestamp;
+        string referralAdditionalInformation;
+    }
+
+    /**
+     *  @notice The information stored for the offer made.
+     *
+     *  @param offerId The ID of the offer.
+     *  @param offeror The address of the offeror.
+     *  @param assetContract The contract of the NFTs for which the offer is being made.
+     *  @param tokenId The tokenId of the NFT for which the offer is being made.
+     *  @param quantity The quantity of NFTs wanted.
+     *  @param currency The currency offered for the NFTs.
+     *  @param totalPrice The total offer amount for the NFTs.
+     *  @param expirationTimestamp The timestamp at and after which the offer cannot be accepted.
+     *  @param status The status of the offer (created, completed, or cancelled).
+     *  @param tokenType The type of token (ERC-721 or ERC-1155) the offer is made for.
+     * @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
+     */
+    struct Offer {
+        uint256 offerId;
+        uint256 tokenId;
+        uint256 quantity;
+        uint256 totalPrice;
+        uint256 expirationTimestamp;
+        address offeror;
+        address assetContract;
+        address currency;
+        TokenType tokenType;
+        Status status;
+        string referralAdditionalInformation;
+    }
+
     /// @dev Emitted when a new listing is created.
     event ListingAdded(
         uint256 indexed listingId,
@@ -197,9 +254,9 @@ interface IDSponsorMarketplace {
     /// @dev Emitted when a new bid is made in an auction.
     event NewBid(
         uint256 indexed listingId,
-        address indexed offeror,
+        address indexed bidder,
         uint256 quantityWanted,
-        uint256 totalOfferAmount,
+        uint256 totalBidAmount,
         address currency
     );
 
@@ -212,8 +269,27 @@ interface IDSponsorMarketplace {
         address winningBidder
     );
 
-    /// @dev Emitted when auction buffers are updated.
-    event AuctionBuffersUpdated(uint256 timeBuffer, uint256 bidBufferBps);
+    /// @dev Emitted when a new offer is created.
+    event NewOffer(
+        address indexed offeror,
+        uint256 indexed offerId,
+        address indexed assetContract,
+        Offer offer
+    );
+
+    /// @dev Emitted when an offer is cancelled.
+    event CancelledOffer(address indexed offeror, uint256 indexed offerId);
+
+    /// @dev Emitted when an offer is accepted.
+    event AcceptedOffer(
+        address indexed offeror,
+        uint256 indexed offerId,
+        address indexed assetContract,
+        uint256 tokenId,
+        address seller,
+        uint256 quantityBought,
+        uint256 totalPricePaid
+    );
 
     /**
      *  @notice Lets a token owner list tokens (ERC 721 or ERC 1155) for sale in a direct listing, or an auction.
@@ -275,7 +351,7 @@ interface IDSponsorMarketplace {
     /**
      *  @notice Lets someone from multiple items from direct listings (fixed prices)
      */
-    function buy(BuyParams[] calldata params) external;
+    function buy(BuyParams[] calldata params) external payable;
 
     /**
      *  @notice Lets someone from a direct listing (fixed prices)
@@ -309,4 +385,46 @@ interface IDSponsorMarketplace {
      *  @param _closeFor For whom the auction is being closed - the auction creator or winning bidder.
      */
     function closeAuction(uint256 _listingId, address _closeFor) external;
+
+    /**
+     *  @notice Make an offer for NFTs (ERC-721 or ERC-1155)
+     *
+     *  @param _params The parameters of an offer.
+     *
+     *  @return offerId The unique integer ID assigned to the offer.
+     */
+    function makeOffer(
+        OfferParams memory _params
+    ) external returns (uint256 offerId);
+
+    /**
+     *  @notice Cancel an offer.
+     *
+     *  @param _offerId The ID of the offer to cancel.
+     */
+    function cancelOffer(uint256 _offerId) external;
+
+    /**
+     *  @notice Accept an offer.
+     *
+     *  @param _offerId The ID of the offer to accept.
+     */
+    function acceptOffer(uint256 _offerId) external;
+
+    /// @notice Returns an offer for the given offer ID.
+    function getOffer(
+        uint256 _offerId
+    ) external view returns (Offer memory offer);
+
+    /// @notice Returns all active (i.e. non-expired or cancelled) offers.
+    function getAllOffers(
+        uint256 _startId,
+        uint256 _endId
+    ) external view returns (Offer[] memory offers);
+
+    /// @notice Returns all valid offers. An offer is valid if the offeror owns and has approved Marketplace to transfer the offer amount of currency.
+    function getAllValidOffers(
+        uint256 _startId,
+        uint256 _endId
+    ) external view returns (Offer[] memory offers);
 }

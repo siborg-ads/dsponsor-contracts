@@ -90,7 +90,12 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             // Handling ERC20 tokens
             if (msg.value > 0) {
                 // Swap native currency to ERC20 if value is sent
-                _swapNativeToERC20(currency, totalAmount, referral.spender);
+                _swapNativeToERC20(
+                    currency,
+                    totalAmount,
+                    msg.value,
+                    referral.spender
+                );
             } else {
                 IERC20(currency).safeTransferFrom(
                     _msgSender(),
@@ -181,24 +186,29 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
     }
 
     /**
-     * @notice Swaps {msg.value} to ERC20 tokens via Uniswap V3
+     * @notice Swap to ERC20 tokens via Uniswap V3
      *
      * @param currency The address of the ERC20 token to swap to
      * @param amount The amount of ERC20 tokens to get
-     * @param recipientRefund The address to refund the remaining native currency
+     * @param amountInMaximum The maximum amount of native currency to spend
+     * @param _recipientRefund The address to refund the remaining native currency.
+     *
+     * @dev If you use it in a loop, set `recipientRefund` to {address(0)} (refund to the contract), except on the last call
      *
      * @return amountOut The amount of ERC20 tokens received
+     *
      */
     function _swapNativeToERC20(
         address currency,
         uint256 amount,
-        address recipientRefund
-    ) internal returns (uint256 amountOut) {
+        uint256 amountInMaximum,
+        address _recipientRefund
+    ) internal returns (uint256 amountOut, uint256 amountRefunded) {
         address weth = swapRouter.WETH9();
         if (currency == weth) {
-            WETH(weth).deposit{value: msg.value}();
+            WETH(weth).deposit{value: amountInMaximum}();
         } else {
-            uint256 balanceBeforeSwap = address(this).balance - msg.value;
+            uint256 balanceBeforeSwap = address(this).balance - amountInMaximum;
 
             // perform the swap
             ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
@@ -209,19 +219,22 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountOut: amount,
-                    amountInMaximum: msg.value,
+                    amountInMaximum: amountInMaximum,
                     sqrtPriceLimitX96: 0
                 });
-            amountOut = swapRouter.exactOutputSingle{value: msg.value}(params);
+            amountOut = swapRouter.exactOutputSingle{value: amountInMaximum}(
+                params
+            );
 
             // refund the remaining native currency
             swapRouter.refundETH();
             uint256 balanceAfterSwap = address(this).balance;
-            if (balanceAfterSwap > balanceBeforeSwap) {
-                Address.sendValue(
-                    payable(recipientRefund),
-                    balanceAfterSwap - balanceBeforeSwap
-                );
+            amountRefunded = balanceAfterSwap - balanceBeforeSwap;
+            address recipientRefund = _recipientRefund == address(0)
+                ? address(this)
+                : _recipientRefund;
+            if (amountRefunded > 0 && balanceAfterSwap > balanceBeforeSwap) {
+                Address.sendValue(payable(recipientRefund), amountRefunded);
             }
         }
     }
