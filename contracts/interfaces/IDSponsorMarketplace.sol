@@ -8,6 +8,11 @@ interface IDSponsorMarketplace {
         ERC20
     }
 
+    enum TransferType {
+        Rent,
+        Sale
+    }
+
     enum Status {
         UNSET,
         CREATED,
@@ -24,6 +29,25 @@ interface IDSponsorMarketplace {
         Direct,
         Auction
     }
+
+    error AuctionAlreadyStarted();
+    error AuctionStillActive();
+    error InsufficientAllowanceOrBalance(address assetContract);
+    error InvalidCurrency();
+    error InvalidPricingParameters();
+    error InvalidRentalExpiration();
+    error InvalidTotalPrice();
+    error InvalidQuantity();
+    error IsNotAuctionListing();
+    error IsNotDirectListing();
+    error isNotWinningBid();
+    error ListingDoesNotExist(uint256 listingId);
+    error OfferIsNotActive(uint256 offerId);
+    error OutOfStock();
+    error OutOfValidityPeriod();
+    error SenderIsNotOfferor();
+    error SenderIsNotTokenOwner();
+    error ZeroQuantity();
 
     /**
      *  @notice The information related to a direct listing buy.
@@ -72,9 +96,9 @@ interface IDSponsorMarketplace {
      *  @dev For use in `createListing` as a parameter type.
      *
      *  @param assetContract         The contract address of the NFT to list for sale.
-
+     *
      *  @param tokenId               The tokenId on `assetContract` of the NFT to list for sale.
-
+     *
      *  @param startTime             The unix timestamp after which the listing is active. For direct listings:
      *                               'active' means NFTs can be bought from the listing. For auctions,
      *                               'active' means bids can be made in the auction.
@@ -98,8 +122,12 @@ interface IDSponsorMarketplace {
      *                               `buyoutPricePerToken * quantityToList`, the bidder wins the auction, and the auction
      *                               is closed.
      *
+     *  @param transferType          The type of transfer to be made : rent or sale. Rent is only possible if `assetContract` is ERC4907.
+     *
+     * @param rentalExpirationTimestamp       The date after which the rental is expired. This is only applicable if `transferType` is `Rent`.
+     *
      *  @param listingType           The type of listing to create - a direct listing or an auction.
-    **/
+     */
     struct ListingParameters {
         address assetContract;
         uint256 tokenId;
@@ -109,7 +137,47 @@ interface IDSponsorMarketplace {
         address currencyToAccept;
         uint256 reservePricePerToken;
         uint256 buyoutPricePerToken;
+        TransferType transferType;
+        uint64 rentalExpirationTimestamp;
         ListingType listingType;
+    }
+
+    /**
+     *  @dev For use in `updateListing` as a parameter type.
+     *  @param quantityToList       The amount of NFTs to list for sale in the listing. For direct listings, the contract
+     *                               only checks whether the listing creator owns and has approved Marketplace to transfer
+     *                               `quantityToList` amount of NFTs to list for sale. For auction listings, the contract
+     *                               ensures that exactly `quantityToList` amount of NFTs to list are escrowed.
+     *
+     *  @param reservePricePerToken For direct listings: this value is ignored. For auctions: the minimum bid amount of
+     *                               the auction is `reservePricePerToken * quantityToList`
+     *
+     *  @param buyoutPricePerToken  For direct listings: interpreted as 'price per token' listed. For auctions: if
+     *                               `buyoutPricePerToken` is greater than 0, and a bidder's bid is at least as great as
+     *                               `buyoutPricePerToken * quantityToList`, the bidder wins the auction, and the auction
+     *                               is closed.
+     *
+     *  @param currencyToAccept     For direct listings: the currency in which a buyer must pay the listing's fixed price
+     *                               to buy the NFT(s). For auctions: the currency in which the bidders must make bids.
+     *
+     *  @param startTime            The unix timestamp after which listing is active. For direct listings:
+     *                               'active' means NFTs can be bought from the listing. For auctions,
+     *                               'active' means bids can be made in the auction.
+     *
+     *  @param secondsUntilEndTime  No. of seconds after the provided `startTime`, after which the listing is inactive.
+     *                               For direct listings: 'inactive' means NFTs cannot be bought from the listing.
+     *                               For auctions: 'inactive' means bids can no longer be made in the auction.
+     *
+     *  @param rentalExpirationTimestamp The date after which the rental is expired. This is only applicable if `transferType` is `Rent`.
+     */
+    struct ListingUpdateParameters {
+        uint256 quantityToList;
+        uint256 reservePricePerToken;
+        uint256 buyoutPricePerToken;
+        address currencyToAccept;
+        uint256 startTime;
+        uint256 secondsUntilEndTime;
+        uint64 rentalExpirationTimestamp;
     }
 
     /**
@@ -151,9 +219,13 @@ interface IDSponsorMarketplace {
      *                               is closed.
      *
      *  @param tokenType             The type of the token(s) listed for for sale -- ERC721 or ERC1155 
+     *     
+     *  @param transferType          The type of transfer to be made : rent or sale. Rent is only possible if `assetContract` is ERC4907.
+     * 
+     *  @param rentalExpirationTimestamp      The date after which the rental is expired. This is only applicable if `transferType` is `Rent`.
      *
      * @param listingType            The type of listing to create - a direct listing or an auction.
-    **/
+     **/
     struct Listing {
         uint256 listingId;
         address tokenOwner;
@@ -166,6 +238,8 @@ interface IDSponsorMarketplace {
         uint256 reservePricePerToken;
         uint256 buyoutPricePerToken;
         TokenType tokenType;
+        TransferType transferType;
+        uint64 rentalExpirationTimestamp;
         ListingType listingType;
     }
 
@@ -178,7 +252,9 @@ interface IDSponsorMarketplace {
      *  @param currency The currency offered for the NFTs.
      *  @param totalPrice The total offer amount for the NFTs.
      *  @param expirationTimestamp The timestamp at and after which the offer cannot be accepted.
-     * @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
+     *  @param transferType The type of transfer to be made : rent or sale. Rent is only possible if `assetContract` is ERC4907.
+     *  @param rentalExpirationTimestamp The date after which the rental is expired. This is only applicable if `transferType` is `Rent`.
+     *  @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
     struct OfferParams {
         address assetContract;
@@ -187,6 +263,8 @@ interface IDSponsorMarketplace {
         address currency;
         uint256 totalPrice;
         uint256 expirationTimestamp;
+        TransferType transferType;
+        uint64 rentalExpirationTimestamp;
         string referralAdditionalInformation;
     }
 
@@ -194,15 +272,17 @@ interface IDSponsorMarketplace {
      *  @notice The information stored for the offer made.
      *
      *  @param offerId The ID of the offer.
-     *  @param offeror The address of the offeror.
-     *  @param assetContract The contract of the NFTs for which the offer is being made.
      *  @param tokenId The tokenId of the NFT for which the offer is being made.
      *  @param quantity The quantity of NFTs wanted.
-     *  @param currency The currency offered for the NFTs.
      *  @param totalPrice The total offer amount for the NFTs.
      *  @param expirationTimestamp The timestamp at and after which the offer cannot be accepted.
-     *  @param status The status of the offer (created, completed, or cancelled).
+     *  @param offeror The address of the offeror.
+     *  @param assetContract The contract of the NFTs for which the offer is being made.
+     *  @param currency The currency offered for the NFTs.
      *  @param tokenType The type of token (ERC-721 or ERC-1155) the offer is made for.
+     *  @param transferType The type of transfer to be made : rent or sale. Rent is only possible if `assetContract` is ERC4907.
+     *  @param rentalExpirationTimestamp The date after which the rental is expired. This is only applicable if `transferType` is `Rent`.
+     *  @param status The status of the offer (created, completed, or cancelled).
      * @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
     struct Offer {
@@ -215,6 +295,8 @@ interface IDSponsorMarketplace {
         address assetContract;
         address currency;
         TokenType tokenType;
+        TransferType transferType;
+        uint64 rentalExpirationTimestamp;
         Status status;
         string referralAdditionalInformation;
     }
@@ -305,40 +387,12 @@ interface IDSponsorMarketplace {
      *  @notice Lets a listing's creator edit the listing's parameters. A direct listing can be edited whenever.
      *          An auction listing cannot be edited after the auction has started.
      *
-     *  @param _listingId            The uid of the listing to edit.
-     *
-     *  @param _quantityToList       The amount of NFTs to list for sale in the listing. For direct listings, the contract
-     *                               only checks whether the listing creator owns and has approved Marketplace to transfer
-     *                               `_quantityToList` amount of NFTs to list for sale. For auction listings, the contract
-     *                               ensures that exactly `_quantityToList` amount of NFTs to list are escrowed.
-     *
-     *  @param _reservePricePerToken For direct listings: this value is ignored. For auctions: the minimum bid amount of
-     *                               the auction is `reservePricePerToken * quantityToList`
-     *
-     *  @param _buyoutPricePerToken  For direct listings: interpreted as 'price per token' listed. For auctions: if
-     *                               `buyoutPricePerToken` is greater than 0, and a bidder's bid is at least as great as
-     *                               `buyoutPricePerToken * quantityToList`, the bidder wins the auction, and the auction
-     *                               is closed.
-     *
-     *  @param _currencyToAccept     For direct listings: the currency in which a buyer must pay the listing's fixed price
-     *                               to buy the NFT(s). For auctions: the currency in which the bidders must make bids.
-     *
-     *  @param _startTime            The unix timestamp after which listing is active. For direct listings:
-     *                               'active' means NFTs can be bought from the listing. For auctions,
-     *                               'active' means bids can be made in the auction.
-     *
-     *  @param _secondsUntilEndTime  No. of seconds after the provided `_startTime`, after which the listing is inactive.
-     *                               For direct listings: 'inactive' means NFTs cannot be bought from the listing.
-     *                               For auctions: 'inactive' means bids can no longer be made in the auction.
+     *  @param _listingId The uid of the listing to edit.
+     *  @param _params The parameters that govern the listing to be updated
      */
     function updateListing(
         uint256 _listingId,
-        uint256 _quantityToList,
-        uint256 _reservePricePerToken,
-        uint256 _buyoutPricePerToken,
-        address _currencyToAccept,
-        uint256 _startTime,
-        uint256 _secondsUntilEndTime
+        ListingUpdateParameters memory _params
     ) external;
 
     /**
@@ -410,21 +464,4 @@ interface IDSponsorMarketplace {
      *  @param _offerId The ID of the offer to accept.
      */
     function acceptOffer(uint256 _offerId) external;
-
-    /// @notice Returns an offer for the given offer ID.
-    function getOffer(
-        uint256 _offerId
-    ) external view returns (Offer memory offer);
-
-    /// @notice Returns all active (i.e. non-expired or cancelled) offers.
-    function getAllOffers(
-        uint256 _startId,
-        uint256 _endId
-    ) external view returns (Offer[] memory offers);
-
-    /// @notice Returns all valid offers. An offer is valid if the offeror owns and has approved Marketplace to transfer the offer amount of currency.
-    function getAllValidOffers(
-        uint256 _startId,
-        uint256 _endId
-    ) external view returns (Offer[] memory offers);
 }
