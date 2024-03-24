@@ -190,8 +190,8 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
      *
      * @param currency The address of the ERC20 token to swap to
      * @param amount The amount of ERC20 tokens to get
-     * @param amountInMaximum The maximum amount of native currency to spend
-     * @param _recipientRefund The address to refund the remaining native currency.
+     * @param amountInMaximum The maximum amount of native currency to spend, expect to be msg.value
+     * @param recipientRefund The address to refund the remaining native currency.
      *
      * @dev If you use it in a loop, set `recipientRefund` to {address(0)} (refund to the contract), except on the last call
      *
@@ -202,14 +202,19 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
         address currency,
         uint256 amount,
         uint256 amountInMaximum,
-        address _recipientRefund
+        address recipientRefund
     ) internal returns (uint256 amountOut, uint256 amountRefunded) {
         address weth = swapRouter.WETH9();
-        if (currency == weth) {
-            WETH(weth).deposit{value: amountInMaximum}();
-        } else {
-            uint256 balanceBeforeSwap = address(this).balance - amountInMaximum;
 
+        uint256 balanceBeforeSwap = address(this).balance - amountInMaximum;
+
+        if (currency == weth) {
+            if (amountInMaximum < amount) {
+                revert InsufficientFunds();
+            }
+            amountOut = amount;
+            WETH(weth).deposit{value: amountOut}();
+        } else {
             // perform the swap
             ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
                 .ExactOutputSingleParams({
@@ -228,14 +233,17 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
 
             // refund the remaining native currency
             swapRouter.refundETH();
-            uint256 balanceAfterSwap = address(this).balance;
-            amountRefunded = balanceAfterSwap - balanceBeforeSwap;
-            address recipientRefund = _recipientRefund == address(0)
-                ? address(this)
-                : _recipientRefund;
-            if (amountRefunded > 0 && balanceAfterSwap > balanceBeforeSwap) {
-                Address.sendValue(payable(recipientRefund), amountRefunded);
-            }
+        }
+
+        uint256 balanceAfterSwap = address(this).balance;
+
+        amountRefunded = balanceAfterSwap - balanceBeforeSwap;
+        address addrRefund = recipientRefund == address(0)
+            ? address(this)
+            : recipientRefund;
+
+        if (amountRefunded > 0 && balanceAfterSwap > balanceBeforeSwap) {
+            Address.sendValue(payable(addrRefund), amountRefunded);
         }
     }
 

@@ -408,11 +408,6 @@ interface IDSponsorMarketplace {
     function buy(BuyParams[] calldata params) external payable;
 
     /**
-     *  @notice Lets someone from a direct listing (fixed prices)
-     */
-    function buy(BuyParams calldata params) external payable;
-
-    /**
      *  @notice Lets someone make an bid in an auction.
      *
      *  @dev Each (address, listing ID) pair maps to a single unique bid. So e.g. if a buyer makes
@@ -431,14 +426,13 @@ interface IDSponsorMarketplace {
     ) external;
 
     /**
-     *  @notice Lets any account close an auction on behalf of either the (1) auction's creator, or (2) winning bidder.
-     *              For (1): The auction creator is sent the winning bid amount.
-     *              For (2): The winning bidder is sent the auctioned NFTs.
+     *  @notice Lets any account close an auction.
+     *          - The auction creator is sent the winning bid amount.
+     *          - The winning bidder is sent the auctioned NFTs.
      *
      *  @param _listingId The uid of the listing (the auction to close).
-     *  @param _closeFor For whom the auction is being closed - the auction creator or winning bidder.
      */
-    function closeAuction(uint256 _listingId, address _closeFor) external;
+    function closeAuction(uint256 _listingId) external;
 
     /**
      *  @notice Make an offer for NFTs (ERC-721 or ERC-1155)

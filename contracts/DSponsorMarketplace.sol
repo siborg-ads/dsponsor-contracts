@@ -13,6 +13,8 @@ import "./interfaces/IERC4907.sol";
 import "./lib/ERC2771ContextOwnable.sol";
 import "./lib/ProtocolFee.sol";
 
+// import "hardhat/console.sol";
+
 /**
  * @title DSponsorMarketplace
  * @notice This contract is a marketplace for offers, direct and auction listings of NFTs with ERC20 tokens as currency.
@@ -370,6 +372,8 @@ contract DSponsorMarketplace is
         uint256 remainingToSpendInSwap = msg.value;
 
         for (uint256 i = 0; i < _buyParams.length; i++) {
+            address payer = _msgSender();
+
             BuyParams memory buyParams = _buyParams[i];
 
             // Swap native currency to ERC20 if value is sent
@@ -385,11 +389,14 @@ contract DSponsorMarketplace is
                     remainingToSpendInSwap,
                     recipientRefund
                 );
+
                 remainingToSpendInSwap = amountRefunded;
+                payer = address(this);
             }
 
             _buy(
                 buyParams.listingId,
+                payer,
                 buyParams.buyFor,
                 buyParams.quantity,
                 buyParams.currency,
@@ -399,33 +406,10 @@ contract DSponsorMarketplace is
         }
     }
 
-    /**
-     * @dev Buy from a single listing, with the option to pay with native currency
-     * (to allow payment with delegated payment systems, payment by credit card)
-     */
-    function buy(BuyParams calldata buyParams) external payable nonReentrant {
-        if (msg.value > 0) {
-            // Swap native currency to ERC20 if value is sent
-            _swapNativeToERC20(
-                buyParams.currency,
-                buyParams.totalPrice,
-                msg.value,
-                buyParams.buyFor // refund to "spender", as _msgSender() can be the address of a delegating payment system
-            );
-        }
-        _buy(
-            buyParams.listingId,
-            buyParams.buyFor,
-            buyParams.quantity,
-            buyParams.currency,
-            buyParams.totalPrice,
-            buyParams.referralAdditionalInformation
-        );
-    }
-
     /// @dev Lets an account buy a given quantity of tokens from a listing.
     function _buy(
         uint256 _listingId,
+        address _payer,
         address _buyFor,
         uint256 _quantityToBuy,
         address _currency,
@@ -482,7 +466,7 @@ contract DSponsorMarketplace is
         listings[_listingId] = targetListing;
 
         _payout(
-            _msgSender(),
+            _payer,
             targetListing.tokenOwner,
             _currency,
             _totalPrice,
@@ -554,12 +538,15 @@ contract DSponsorMarketplace is
             referralAdditionalInformation: _referralAdditionalInformation
         });
 
+        // Collect incoming bid
+        _pay(newBid.bidder, address(this), currency, incomingBidAmount);
+
         // Close auction and execute sale if there's a buyout price and incoming bid amount is buyout price.
         if (
             targetListing.buyoutPricePerToken > 0 &&
             incomingBidAmount >= targetListing.buyoutPricePerToken * quantity
         ) {
-            _closeAuctionForBidder(targetListing, newBid);
+            _closeAuction(targetListing, newBid);
         } else {
             /**
              *      If there's an existing winning bid, incoming bid amount must be bid buffer % greater.
@@ -600,9 +587,6 @@ contract DSponsorMarketplace is
             );
         }
 
-        // Collect incoming bid
-        _pay(newBid.bidder, address(this), currency, incomingBidAmount);
-
         emit NewBid(
             targetListing.listingId,
             newBid.bidder,
@@ -616,10 +600,12 @@ contract DSponsorMarketplace is
                     Auction listings sales logic
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Lets an account close an auction for either the (1) winning bidder, or (2) auction creator.
+    /**
+     * @dev Lets an account close an auction
+     * (distribute winning bid amount to auction creator and distribute auction items to the winning bidder)
+     */
     function closeAuction(
-        uint256 _listingId,
-        address _closeFor
+        uint256 _listingId
     ) external nonReentrant onlyExistingListing(_listingId) {
         Listing memory targetListing = listings[_listingId];
 
@@ -641,14 +627,7 @@ contract DSponsorMarketplace is
                 revert AuctionStillActive();
             }
 
-            // No `else if` to let auction close in 1 tx when targetListing.tokenOwner == targetBid.bidder.
-            if (_closeFor == targetListing.tokenOwner) {
-                _closeAuctionForAuctionCreator(targetListing, targetBid);
-            }
-
-            if (_closeFor == targetBid.bidder) {
-                _closeAuctionForBidder(targetListing, targetBid);
-            }
+            _closeAuction(targetListing, targetBid);
         }
     }
 
@@ -676,8 +655,7 @@ contract DSponsorMarketplace is
         );
     }
 
-    /// @dev Closes an auction for an auction creator; distributes winning bid amount to auction creator.
-    function _closeAuctionForAuctionCreator(
+    function _closeAuction(
         Listing memory _targetListing,
         Bid memory _winningBid
     ) internal {
@@ -688,7 +666,6 @@ contract DSponsorMarketplace is
         _targetListing.endTime = block.timestamp;
         listings[_targetListing.listingId] = _targetListing;
 
-        _winningBid.pricePerToken = 0;
         winningBid[_targetListing.listingId] = _winningBid;
 
         ReferralRevenue memory referral = ReferralRevenue({
@@ -706,24 +683,6 @@ contract DSponsorMarketplace is
             _targetListing.tokenId,
             referral
         );
-
-        emit AuctionClosed(
-            _targetListing.listingId,
-            _msgSender(),
-            false,
-            _targetListing.tokenOwner,
-            _winningBid.bidder
-        );
-    }
-
-    /// @dev Closes an auction for the winning bidder; distributes auction items to the winning bidder.
-    function _closeAuctionForBidder(
-        Listing memory _targetListing,
-        Bid memory _winningBid
-    ) internal {
-        _targetListing.endTime = block.timestamp;
-        winningBid[_targetListing.listingId] = _winningBid;
-        listings[_targetListing.listingId] = _targetListing;
 
         _transferListingTokens(
             address(this),
@@ -887,20 +846,6 @@ contract DSponsorMarketplace is
         }
     }
 
-    /// @dev Checks whether the offer exists, is active, and if the offeror has sufficient balance.
-    function _validateExistingOffer(
-        Offer memory _targetOffer
-    ) internal view returns (bool isValid) {
-        isValid =
-            _targetOffer.expirationTimestamp > block.timestamp &&
-            _targetOffer.status == Status.CREATED &&
-            _validateERC20BalAndAllowance(
-                _targetOffer.offeror,
-                _targetOffer.currency,
-                _targetOffer.totalPrice
-            );
-    }
-
     /*//////////////////////////////////////////////////////////////
             Shared internal functions
     //////////////////////////////////////////////////////////////*/
@@ -1046,6 +991,8 @@ contract DSponsorMarketplace is
                 isValid =
                     IERC4907(_assetContract).userOf(_tokenId) == address(0) ||
                     IERC4907(_assetContract).userOf(_tokenId) != address(this);
+            } else {
+                isValid = true;
             }
             isValid =
                 isValid &&

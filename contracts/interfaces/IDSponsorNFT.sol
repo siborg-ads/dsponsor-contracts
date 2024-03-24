@@ -65,6 +65,10 @@ interface IDSponsorNFTBase {
      *  EVENTS
      *****************/
 
+    /// @dev ERC-4906 events
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+    event MetadataUpdated(uint256 indexed tokenId);
+
     event ContractURIUpdated();
 
     event Mint(
