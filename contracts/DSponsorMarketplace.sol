@@ -272,7 +272,7 @@ contract DSponsorMarketplace is
         }
 
         if (_params.startTime > 0 && _params.startTime < block.timestamp) {
-            // do not allow listing to start in the past (1 hour buffer)
+            // do not allow listing to start in the past
             _params.startTime = block.timestamp;
         }
 
@@ -980,9 +980,12 @@ contract DSponsorMarketplace is
         uint64 _rentalExpirationTimestamp
     ) internal view {
         address market = address(this);
-        bool isValid;
+        bool isValid = false;
 
-        if (_tokenType == TokenType.ERC1155) {
+        if (
+            _tokenType == TokenType.ERC1155 &&
+            _transferType != TransferType.Rent
+        ) {
             isValid =
                 IERC1155(_assetContract).balanceOf(_tokenOwner, _tokenId) >=
                 _quantity &&
@@ -1028,7 +1031,7 @@ contract DSponsorMarketplace is
                 type(IERC4907).interfaceId
             );
         if (!isValid) {
-            revert("Marketplace: rent avialable for ERC4907 contract only.");
+            revert NotERC4907Compliant();
         }
     }
 
@@ -1065,7 +1068,7 @@ contract DSponsorMarketplace is
         ) {
             tokenType = TokenType.ERC721;
         } else {
-            revert("token must be ERC1155 or ERC721.");
+            revert NotERC721OrERC1155();
         }
     }
 

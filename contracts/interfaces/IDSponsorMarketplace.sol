@@ -42,6 +42,8 @@ interface IDSponsorMarketplace {
     error IsNotDirectListing();
     error isNotWinningBid();
     error ListingDoesNotExist(uint256 listingId);
+    error NotERC4907Compliant();
+    error NotERC721OrERC1155();
     error OfferIsNotActive(uint256 offerId);
     error OutOfStock();
     error OutOfValidityPeriod();
