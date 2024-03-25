@@ -147,11 +147,6 @@ describe('DSponsorAgreements', function () {
       ERC20MockAddress,
       ''
     )
-    await DSponsorNFT.connect(user).setUser(
-      tokensUser[1],
-      user2Addr,
-      3707065848
-    )
 
     DSponsorAgreements = await ethers.deployContract('DSponsorAgreements', [
       forwarder,
@@ -328,8 +323,28 @@ describe('DSponsorAgreements', function () {
         )
     })
 
-    it('Should allow sponsoring data submission for tenant', async function () {
+    it('Should allow sponsoring data submission for tenant only', async function () {
       await loadFixture(deployFixture)
+
+      await DSponsorNFT.connect(user).setUser(
+        tokensUser[1],
+        user2Addr,
+        3707065848
+      )
+
+      await expect(
+        DSponsorAgreements.connect(user).submitAdProposal(
+          offerIdDSponsorNFT,
+          tokensUser[1],
+          adParameters[1],
+          adData
+        )
+      )
+        .to.revertedWithCustomError(
+          DSponsorAgreements,
+          'UnallowedSponsorOperation'
+        )
+        .withArgs(userAddr, offerIdDSponsorNFT, tokensUser[1])
 
       await expect(
         DSponsorAgreements.connect(user2).submitAdProposal(

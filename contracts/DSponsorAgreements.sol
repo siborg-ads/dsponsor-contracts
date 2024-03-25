@@ -46,24 +46,31 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         _;
     }
 
-    /// @dev authorize 'user' (ERC4907 tenant) or 'owner' (ERC721) of the token to submit a proposal
+    /// @dev authorize the 'user' (ERC4907 tenant) or - if no user - the token 'owner' (ERC721) to submit a proposal
     modifier onlySponsor(uint256 offerId, uint256 tokenId) {
-        bool isOwner = _sponsoringOffers[offerId].nftContract.ownerOf(
-            tokenId
-        ) == _msgSender();
+        bool isUser = false;
+        address currentUser = address(0);
 
-        if (!isOwner) {
-            bool isUser = false;
-            try
-                IERC4907(address(_sponsoringOffers[offerId].nftContract))
-                    .userOf(tokenId)
-            returns (address user) {
-                isUser = user == _msgSender();
-            } catch (bytes memory) {
-                /// @dev means NFT contract is not ERC4907 compliant
-            }
+        try
+            IERC4907(address(_sponsoringOffers[offerId].nftContract)).userOf(
+                tokenId
+            )
+        returns (address user) {
+            currentUser = user;
+            isUser = user == _msgSender();
+        } catch (bytes memory) {
+            /// @dev means NFT contract is not ERC4907 compliant
+        }
 
-            if (!isUser) {
+        if (currentUser != address(0) && !isUser) {
+            revert UnallowedSponsorOperation(_msgSender(), offerId, tokenId);
+        }
+        if (currentUser == address(0)) {
+            bool isOwner = _sponsoringOffers[offerId].nftContract.ownerOf(
+                tokenId
+            ) == _msgSender();
+
+            if (!isOwner) {
                 revert UnallowedSponsorOperation(
                     _msgSender(),
                     offerId,

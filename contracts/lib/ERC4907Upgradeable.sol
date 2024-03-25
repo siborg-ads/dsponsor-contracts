@@ -32,7 +32,7 @@ abstract contract ERC4907Upgradeable is
     /** @notice Specify who can use an NFT as a "user" (tenant).
      * If not rented yet or when the expiration date is reached,
      * the approved spenders and owner can set a new user.
-     * When rented, the user only change the user address - but cannot extend the expiration date.
+     * When rented, the user and users' approved operated can change the user address - but cannot extend the expiration date.
      *
      * @dev The zero address indicates there is no user. Throws if `tokenId` is not valid NFT
      *
@@ -46,12 +46,14 @@ abstract contract ERC4907Upgradeable is
     ) public virtual override {
         address currentUser = userOf(tokenId);
         address owner = ownerOf(tokenId);
-        if (currentUser == address(0)) {
-            _checkAuthorized(ownerOf(tokenId), _msgSender(), tokenId);
+
+        if (currentUser == address(0) || currentUser == owner) {
+            _checkAuthorized(owner, _msgSender(), tokenId);
         } else {
             if (
-                currentUser != owner &&
-                (currentUser != _msgSender() || userExpires(tokenId) < expires)
+                (currentUser != _msgSender() &&
+                    isApprovedForAll(currentUser, _msgSender()) == false) ||
+                (userExpires(tokenId) < expires)
             ) {
                 revert UnauthorizedUserOperation();
             }

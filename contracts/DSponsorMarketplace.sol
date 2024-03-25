@@ -193,7 +193,8 @@ contract DSponsorMarketplace is
             _params.tokenId,
             tokenAmountToList,
             tokenTypeOfListing,
-            _params.transferType
+            _params.transferType,
+            _params.rentalExpirationTimestamp
         );
 
         Listing memory newListing = Listing({
@@ -326,7 +327,8 @@ contract DSponsorMarketplace is
                 targetListing.tokenId,
                 safeNewQuantity,
                 targetListing.tokenType,
-                targetListing.transferType
+                targetListing.transferType,
+                targetListing.rentalExpirationTimestamp
             );
 
             // Escrow the new quantity of tokens to list in the auction.
@@ -453,7 +455,8 @@ contract DSponsorMarketplace is
             targetListing.tokenId,
             _quantityToBuy,
             targetListing.tokenType,
-            targetListing.transferType
+            targetListing.transferType,
+            targetListing.rentalExpirationTimestamp
         );
 
         ReferralRevenue memory referral = ReferralRevenue({
@@ -493,7 +496,7 @@ contract DSponsorMarketplace is
     }
 
     /*///////////////////////////////////////////////////////////////
-                        Bid logic
+                    Auction listings sales logic
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Lets an account make a bid in an auction.
@@ -595,10 +598,6 @@ contract DSponsorMarketplace is
             currency
         );
     }
-
-    /*///////////////////////////////////////////////////////////////
-                    Auction listings sales logic
-    //////////////////////////////////////////////////////////////*/
 
     /**
      * @dev Lets an account close an auction
@@ -769,7 +768,8 @@ contract DSponsorMarketplace is
             _targetOffer.tokenId,
             _targetOffer.quantity,
             _targetOffer.tokenType,
-            _targetOffer.transferType
+            _targetOffer.transferType,
+            _targetOffer.rentalExpirationTimestamp
         );
 
         offers[_offerId].status = Status.COMPLETED;
@@ -969,14 +969,15 @@ contract DSponsorMarketplace is
             IERC20(_currency).allowance(_tokenOwner, address(this)) >= _amount;
     }
 
-    /// @dev Validates that `_tokenOwner` owns and has approved Market to transfer NFTs.
+    /// @dev Validates that `_tokenOwner` owns and has approved Market to transfer/rent NFTs
     function _validateOwnershipAndApproval(
         address _tokenOwner,
         address _assetContract,
         uint256 _tokenId,
         uint256 _quantity,
         TokenType _tokenType,
-        TransferType _transferType
+        TransferType _transferType,
+        uint64 _rentalExpirationTimestamp
     ) internal view {
         address market = address(this);
         bool isValid;
@@ -987,21 +988,29 @@ contract DSponsorMarketplace is
                 _quantity &&
                 IERC1155(_assetContract).isApprovedForAll(_tokenOwner, market);
         } else if (_tokenType == TokenType.ERC721) {
-            if (_transferType == TransferType.Rent) {
-                isValid =
-                    IERC4907(_assetContract).userOf(_tokenId) == address(0) ||
-                    IERC4907(_assetContract).userOf(_tokenId) != address(this);
-            } else {
-                isValid = true;
-            }
             isValid =
-                isValid &&
                 IERC721(_assetContract).ownerOf(_tokenId) == _tokenOwner &&
                 (IERC721(_assetContract).getApproved(_tokenId) == market ||
                     IERC721(_assetContract).isApprovedForAll(
                         _tokenOwner,
                         market
                     ));
+
+            if (
+                _transferType == TransferType.Rent &&
+                IERC4907(_assetContract).userOf(_tokenId) != address(0) &&
+                IERC4907(_assetContract).userOf(_tokenId) !=
+                IERC721(_assetContract).ownerOf(_tokenId)
+            ) {
+                isValid =
+                    IERC4907(_assetContract).userOf(_tokenId) == _tokenOwner &&
+                    IERC721(_assetContract).isApprovedForAll(
+                        _tokenOwner,
+                        market
+                    ) &&
+                    IERC4907(_assetContract).userExpires(_tokenId) >=
+                    _rentalExpirationTimestamp;
+            }
         }
 
         if (!isValid) {
