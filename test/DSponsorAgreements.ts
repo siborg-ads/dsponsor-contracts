@@ -162,7 +162,7 @@ describe('DSponsorAgreements', function () {
 
     offerInit = {
       name: 'Offer X',
-      rulesURI: 'rulesURI',
+      offerMetadata: 'offerMetadata',
       options: offerOptions
     }
     await DSponsorAgreements.connect(owner).createOffer(
@@ -226,7 +226,7 @@ describe('DSponsorAgreements', function () {
           offerIdCounter + 1,
           false,
           offerInit.name,
-          offerInit.rulesURI,
+          offerInit.offerMetadata,
           ERC721MockAddress
         )
 
@@ -240,7 +240,7 @@ describe('DSponsorAgreements', function () {
       await expect(
         DSponsorAgreements.connect(owner).createOffer(
           ERC721MockAddress,
-          Object.assign({}, offerInit, { rulesURI: '' })
+          Object.assign({}, offerInit, { offerMetadata: '' })
         )
       ).to.be.revertedWithCustomError(DSponsorAgreements, 'EmptyString')
 
@@ -943,7 +943,7 @@ describe('DSponsorAgreements', function () {
           offerIdCounter + 1,
           false,
           offerInit.name,
-          offerInit.rulesURI,
+          offerInit.offerMetadata,
           ERC721MockAddress
         )
     })

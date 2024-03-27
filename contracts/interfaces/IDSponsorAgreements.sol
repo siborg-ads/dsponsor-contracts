@@ -8,8 +8,8 @@ interface IDSponsorAgreements {
     struct OfferInitParams {
         /// @notice Name of the offer, providing a brief identifier.
         string name;
-        /// @notice URI linking to description, detailed rules and publisher conditions.
-        string rulesURI;
+        /// @notice URI linking to description, creator information, detailed rules and publisher conditions.
+        string offerMetadata;
         /// @notice Configurable options for the offer, including admins, validators, and ad parameters.
         OfferOptions options;
     }
@@ -107,7 +107,7 @@ interface IDSponsorAgreements {
         uint256 indexed offerId,
         bool indexed disable,
         string name,
-        string rulesURI,
+        string offerMetadata,
         IERC721 indexed nftContract
     );
     event UpdateOfferAdmin(
@@ -164,7 +164,7 @@ interface IDSponsorAgreements {
         uint256 offerId,
         bool disable,
         string calldata name,
-        string calldata rulesURI,
+        string calldata offerMetadata,
         OfferOptions calldata addOptions,
         OfferOptions calldata removeOptions
     ) external;

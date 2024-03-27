@@ -157,7 +157,7 @@ describe('DSponsorAdmin', function () {
 
     offerInit = {
       name: 'Offer X',
-      rulesURI: 'rulesURI',
+      offerMetadata: 'offerMetadata',
       options: offerOptions
     }
 
@@ -283,7 +283,7 @@ describe('DSponsorAdmin', function () {
       await expect(
         DSponsorAdmin.connect(user).createDSponsorNFTAndOffer(
           initDSponsorNFTParams,
-          Object.assign({}, offerInit, { rulesURI: '' })
+          Object.assign({}, offerInit, { offerMetadata: '' })
         )
       ).to.revertedWithCustomError(DSponsorAdmin, 'EmptyString')
     })
@@ -1140,7 +1140,7 @@ describe('DSponsorAdmin', function () {
         validFromDate: '2024-01-01T00:00:00Z',
         validToDate: '2024-12-31T23:59:59Z'
       }
-      const rulesURI = 'ipfs://QmX....'
+      const offerMetadata = 'ipfs://QmX....'
 
       // todo-creator: define the first keywords to be tokenized, and their prices / currencies
       const tokenizedKeywords = ['bitcoin', 'ethereum', 'nft', 'crypto', 'eth']
@@ -1210,7 +1210,7 @@ describe('DSponsorAdmin', function () {
 
       const siborgOfferInit: IDSponsorAgreements.OfferInitParamsStruct = {
         name: contractMetadata.name,
-        rulesURI,
+        offerMetadata,
         options: {
           admins: [siborgOwnerAddr],
           validators: [],

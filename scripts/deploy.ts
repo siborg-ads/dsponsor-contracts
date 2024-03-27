@@ -70,7 +70,7 @@ async function deploy() {
 
   const offerInit: IDSponsorAgreements.OfferInitParamsStruct = {
     name: 'Offer TEST',
-    rulesURI: contractURI,
+    offerMetadata: contractURI,
     options: offerOptions
   }
 

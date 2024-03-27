@@ -111,15 +111,15 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
     /**
      * @notice Creates a new sponsoring offer for a specified ERC721 contract.
      * @param nftContract The ERC721 contract address associated with the offer.
-     * @param offerParams Struct containing offer details such as name, rulesURI, and options including admins, validators, and ad parameters.
+     * @param offerParams Struct containing offer details such as name, offerMetadata, and options including admins, validators, and ad parameters.
      * @dev Emits an `UpdateOffer` event upon successful creation.
      */
     function createOffer(
         IERC721 nftContract,
         OfferInitParams calldata offerParams
     ) public {
-        if (bytes(offerParams.rulesURI).length == 0) {
-            revert EmptyString("rulesURI");
+        if (bytes(offerParams.offerMetadata).length == 0) {
+            revert EmptyString("offerMetadata");
         }
 
         if (offerParams.options.admins.length == 0) {
@@ -137,7 +137,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
             _offerCountId,
             false,
             offerParams.name,
-            offerParams.rulesURI
+            offerParams.offerMetadata
         );
 
         _updateOfferAdmins(_offerCountId, true, offerParams.options.admins);
@@ -268,7 +268,7 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
      * @param offerId The ID of the offer to update.
      * @param disable Flag to disable or enable the offer.
      * @param name New name for the offer. Set empty string to keep the current name.
-     * @param rulesURI New URI for the offer's description and conditions. Set empty string to keep the current URI.
+     * @param offerMetadata New URI for the offer's description and conditions. Set empty string to keep the current URI.
      * @param addOptions Add admins, validators, and ad parameters.
      * @param removeOptions Remove admins, validators, and ad parameters.
      * @dev Only callable by offer admins. Emits `UpdateOffer` and potentially `UpdateOfferAdmin`, `UpdateOfferValidator`, `UpdateOfferAdParameter` events.
@@ -277,11 +277,11 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         uint256 offerId,
         bool disable,
         string calldata name,
-        string calldata rulesURI,
+        string calldata offerMetadata,
         OfferOptions calldata addOptions,
         OfferOptions calldata removeOptions
     ) external onlyAdmin(offerId) {
-        _updateOffer(offerId, disable, name, rulesURI);
+        _updateOffer(offerId, disable, name, offerMetadata);
 
         _updateOfferAdmins(offerId, true, addOptions.admins);
         _updateOfferAdmins(offerId, false, removeOptions.admins);
@@ -392,16 +392,16 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         uint256 offerId,
         bool disable,
         string calldata name,
-        string calldata rulesURI
+        string calldata offerMetadata
     ) private {
         _sponsoringOffers[offerId].disabled = disable;
 
-        /// @dev: When indexing from events, ignore updated name & rulesURI if empty
+        /// @dev: When indexing from events, ignore updated name & offerMetadata if empty
         emit UpdateOffer(
             offerId,
             disable,
             name,
-            rulesURI,
+            offerMetadata,
             _sponsoringOffers[offerId].nftContract
         );
     }
