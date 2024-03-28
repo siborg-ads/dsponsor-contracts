@@ -1,83 +1,98 @@
 # d>sponsor contracts
 
-**d>sponsor** revolutionizes the way media and creators engage with sponsorships. By leveraging the power of NFTs, the protocol offers a community-owned ad inventory, enabling seamless and transparent sponsorship management.
+*d>sponsor* is a decentralized solution for sponsorship that provides funding in exchange for shares in visibility. It aligns the interests of both the sponsors and the sponsees.
+
+This protocol allows anyone to create tokens for advertising spaces. These tokens can be purchased to acquire ad spaces on websites, apps, and more, for a specific time period, granting the exclusive right to place advertisements there.
 
 ![logo d>sponsor](assets/schema%20dsponsor.png)
 
-## Contracts features
+## Contracts Features
 
 ### DSponsorAdmin.sol
 
-This main contract is the entrypoint for frontends within the d>sponsor ecosystem. Compatible with any ERC721 contract, it grants each NFT token owner a right to advertise.
+This is the primary contract and serves as the gateway for frontends within the d>sponsor ecosystem. It is compatible with any ERC721 contract, providing token owners with the exclusive right to advertise. It is also compatible with ERC4907 to allow token *users* the exclusive right to advertise.
 
-This contract provides a set of functions to create and manage sponsorship tokens and ad proposals. It also includes a mechanism to collect minting fees sent to the protocol treasury, and a referral system to track and reward later fee contributions.
+The contract offers functions for creating and managing sponsorship tokens and advertising proposals. It includes a system for collecting minting fees for the protocol's treasury and a referral program to reward contributions to these fees.
 
-On the sponsorship management side:
-
-* A sponsee can specify any set of sponsoring properties, according to its off-chain implementation. This could be an audio URL, a website link, a logo, etc.
-* Sponsors can submit data for provided sponsoring properties only
-* The sponsee validates (or not) the submitted data.
-* Sponsor can transfer a token to another address, new owner will be the only one able to set sponsoring data linked to the `tokenId`
-
-On the fee management side:
-
-* The protocol owner can update the fee basis points.
-* The fee mechanism can be used with any call, with minting being a relevant use case.
+- A sponsee can define any number of sponsorship properties, which might include an audio URL, a website link, a logo, etc., based on their off-chain implementation.
+- Sponsors are allowed to submit data only for the sponsorship properties provided.
+- The sponsee may approve or reject the submitted data.
+- A sponsor can transfer a token to another address; the new owner will then be the only one able to set sponsorship data linked to the `tokenId`.
+- Includes a built-in Uniswap swap function to enable ERC20 payments from the native currency.
 
 ### DSponsorNFT.sol
 
-Although any ERC721 compliant contract is compatible with d>sponsor protocol, this is an NFT contract that integrates various standards and custom functionalities.
+While any ERC721-compliant contract can be used with the d>sponsor protocol, this specific NFT contract incorporates various standards and unique functionalities.
 
-* Pricing in ERC20 tokens & native currency
-* Rental capabilities (ERC4907)
-* ERC2981 royalties built-in
-* Contract owner can set a custom base URI for token metadata and a contract-level metadata URI.
+- Allows pricing in ERC20 tokens and the native currency.
+- Includes rental capabilities (ERC4907).
+- Incorporates ERC2981 royalties.
+- Enables the contract owner to define a custom base URI for token metadata and a contract-level metadata URI.
 
-## Deployments addresses
+### DSponsorMarketplace.sol
 
-### Polygon Mumbai testnet
+This contract manages secondary sales and includes:
 
-* `DSponsorAdmin` contract is deployed to: [`0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3`](https://mumbai.polygonscan.com/address/0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3)
+- Direct Listing, English Auctions, and Offer mechanisms.
+- Options for sale or rent.
+- Payments in any ERC20 currency.
+- Royalties, fee and protocol rewards mechanisms.
 
-* An exemple of `DSponsorNFT` deployed: [`0x8C4115060A52DD8693521095f6f150D3F2aaFa53`](https://mumbai.polygonscan.com/address/0x8C4115060A52DD8693521095f6f150D3F2aaFa53)
+## Deployment Addresses
+
+### Sepolia Testnet (Chain ID = 11155111)
+
+- `DSponsorAdmin`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://sepolia.etherscan.io/address/0xdf42633bd40e8f46942e44a80f3a58d0ec971f09)
+
+- Example of `DSponsorNFT` deployed: [`0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47`](https://sepolia.etherscan.io/address/0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47)
+
+- `DSponsorMarketplace`: [`0x86adf604b5b72d270654f3a0798cabebc677c7fc`](https://sepolia.etherscan.io/address/0x86adf604b5b72d270654f3a0798cabebc677c7fc)
 
 ## Development
 
-### Set up environment
+### Setting Up the Environment
 
-* Check the required and optional environment variables from the `.env_example` file.
-* Create your own `.env` file
-* Install dependencies and build the project
+- Refer to the `.env_example` file for the necessary and optional environment variables.
+- Create your own `.env` file.
+- Install dependencies and compile the project:
 
-```
-# 1- Environment variables are used for tests and deployment
+```shell
+# Set up environment variables for tests and deployment
 cp .env_example .env
 
-# 2- Install dependencies
-npm i
+# Install project dependencies
+npm install
 
-# 3- Compile contracts
+# Compile contracts
 npx hardhat compile
 ```
 
-### Run tests
+### Running tests
+
+Execute tests with gas reports as configured in `hardhat.config.js`:
 
 ```shell
-npm run test # with gas reports according hardhat.config.js
+npm run test 
 ```
 
-Check testing coverage with:
+To check test coverage:
 
 ```shell
 npm run coverage
+```
+
+### Security analysis
+
+```shell
+slither . --checklist  > slither-analysis.md
 ```
 
 ### Deploy
 
 ```shell
 # deploy in testnet
-npm run deploy mumbai
+npm run deploy sepolia
 
 # deploy in mainnet
-npm run deploy polygon
+npm run deploy arbitrum
 ```

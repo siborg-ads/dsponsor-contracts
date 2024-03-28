@@ -61,9 +61,9 @@ describe('DSponsorAdmin', function () {
 
   const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 
-  let WethAddr = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC on Polygon
+  let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
   let WethContract: ERC20
-  let USDCeAddr = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
+  let USDCeAddr = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'
   let USDCeContract: ERC20
 
   const ERC20Amount: bigint = parseEther('15')
@@ -1153,18 +1153,18 @@ describe('DSponsorAdmin', function () {
         // sponsor has enough in balance to mint
         parseEther('0.5'),
 
-        // we want to set the price of 150.50 MATIC for 'ethereum'
-        parseEther('150.50')
+        // we want to set the price of 0.45 ETH for 'ethereum'
+        parseEther('0.05')
       ]
       // set 6.25 USDCe for other tokens like 'nft'
-      // as sponsor does have USDCe tokens, he will pay in MATIC, the contract will swap
+      // as sponsor does have USDCe tokens, he will pay in native token, the contract will swap
       const defaultCurrency = USDCeAddr
       const defaultAmount = BigInt((6.25 * 10 ** 6).toString())
 
       // todo-tech: fetch the current price of USDCe, with Moralis API for example
       // https://docs.moralis.io/web3-data-api/evm/reference/price/get-token-price?address=0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0&chain=eth&include=percent_change
       // set the value accordingly, add a margin for the swap (will be refund to the sponsor if not used)
-      const defaultAmountValue = parseEther('18.25') // 18.25 MATIC for 6.25 USDCe
+      const defaultAmountValue = parseEther('1') // 1 ETH for 6.25 USDCe
 
       // todo-tech: referral system to apply, here we set vitalik.eth as the referral...
       const referralAdditionalInformation =

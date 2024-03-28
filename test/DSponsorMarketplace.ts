@@ -60,9 +60,9 @@ describe('DSponsorMarketplace', function () {
 
   const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 
-  let WethAddr = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC on Polygon
+  let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
   let WethContract: ERC20
-  let USDCeAddr = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
+  let USDCeAddr = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'
   let USDCeContract: ERC20
 
   const ERC20Amount: bigint = parseEther('15')
