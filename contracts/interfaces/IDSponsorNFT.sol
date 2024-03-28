@@ -65,6 +65,10 @@ interface IDSponsorNFTBase {
      *  EVENTS
      *****************/
 
+    /// @dev ERC-4906 events
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+    event MetadataUpdated(uint256 indexed tokenId);
+
     event ContractURIUpdated();
 
     event Mint(
@@ -139,6 +143,11 @@ interface IDSponsorNFTBase {
     ) external;
 
     function setTokenURI(uint256 tokenId, string memory URI) external;
+
+    function setTokenURIs(
+        uint256[] calldata _tokenIds,
+        string[] calldata _tokenURIs
+    ) external;
 
     function getMintPrice(
         uint256 tokenId,

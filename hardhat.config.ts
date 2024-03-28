@@ -9,16 +9,16 @@ import type { NetworksUserConfig } from 'hardhat/types'
 
 const deploymentNetworks: NetworksUserConfig = {}
 
-if (process.env.TESTNET_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
-  deploymentNetworks.mumbai = {
-    url: process.env.TESTNET_RPC_URL,
+if (process.env.SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.sepolia = {
+    url: process.env.SEPOLIA_RPC_URL,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 }
 
-if (process.env.MAINNET_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
-  deploymentNetworks.polygon = {
-    url: process.env.MAINNET_RPC_URL,
+if (process.env.ARBITRUM_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.arbitrum = {
+    url: process.env.ARBITRUM_RPC_URL,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 }
@@ -29,7 +29,10 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 200,
+        details: {
+          yul: true
+        }
       },
       viaIR: false
     }
@@ -38,19 +41,20 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.MAINNET_RPC_URL as string,
-        blockNumber: 53116830
+        url: process.env.ARBITRUM_RPC_URL as string,
+        blockNumber: 195167985
       },
-      chainId: 137
+      chainId: 42161
     },
+
     ...deploymentNetworks
   },
 
   etherscan: {
-    enabled: process.env.POLYGONSCAN_API_KEY !== undefined,
+    enabled: true,
     apiKey: {
-      polygonMumbai: process.env.POLYGONSCAN_API_KEY as string,
-      polygon: process.env.POLYGONSCAN_API_KEY as string
+      arbitrum: process.env.ARBISCAN_API_KEY as string,
+      sepolia: process.env.ETHERSCAN_API_KEY as string
     }
   },
 
@@ -60,11 +64,7 @@ const config: HardhatUserConfig = {
 
   gasReporter: {
     enabled: process.env.COINMARKETCAP_KEY !== undefined,
-
-    token: 'MATIC',
-    gasPriceApi:
-      'https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice',
-
+    token: 'ETH',
     currency: 'EUR',
     coinmarketcap: process.env.COINMARKETCAP_KEY
   }

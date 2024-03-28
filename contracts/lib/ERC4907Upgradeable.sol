@@ -15,6 +15,8 @@ abstract contract ERC4907Upgradeable is
         uint256 expires; // rental expiration timestamp
     }
 
+    error UnauthorizedUserOperation();
+
     mapping(uint256 => UserInfo) internal _users;
 
     function __ERC4907_init(
@@ -27,16 +29,36 @@ abstract contract ERC4907Upgradeable is
 
     function __ERC4907_init_unchained() internal onlyInitializing {}
 
-    /// @notice Specify who can use an NFT as a "user" (tenant)
-    /// @dev The zero address indicates there is no user. Throws if `tokenId` is not valid NFT
-    /// @param user  The new user of the NFT
-    /// @param expires  UNIX timestamp, the new user could use the NFT before expires
+    /** @notice Specify who can use an NFT as a "user" (tenant).
+     * If not rented yet or when the expiration date is reached,
+     * the approved spenders and owner can set a new user.
+     * When rented, the user and users' approved operated can change the user address - but cannot extend the expiration date.
+     *
+     * @dev The zero address indicates there is no user. Throws if `tokenId` is not valid NFT
+     *
+     * @param user  The new user of the NFT
+     * @param expires  UNIX timestamp, the new user could use the NFT before expires
+     */
     function setUser(
         uint256 tokenId,
         address user,
         uint64 expires
     ) public virtual override {
-        _checkAuthorized(ownerOf(tokenId), _msgSender(), tokenId);
+        address currentUser = userOf(tokenId);
+        address owner = ownerOf(tokenId);
+
+        if (currentUser == address(0) || currentUser == owner) {
+            _checkAuthorized(owner, _msgSender(), tokenId);
+        } else {
+            if (
+                (currentUser != _msgSender() &&
+                    isApprovedForAll(currentUser, _msgSender()) == false) ||
+                (userExpires(tokenId) < expires)
+            ) {
+                revert UnauthorizedUserOperation();
+            }
+        }
+
         UserInfo storage info = _users[tokenId];
         info.user = user;
         info.expires = expires;

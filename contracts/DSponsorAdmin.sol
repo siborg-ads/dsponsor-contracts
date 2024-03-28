@@ -39,7 +39,7 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
         address forwarder,
         address initialOwner,
         UniV3SwapRouter _swapRouter,
-        address _recipient,
+        address payable _recipient,
         uint96 _bps
     )
         DSponsorAgreements(forwarder, initialOwner)
@@ -112,7 +112,7 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
         );
 
         // Execute the mint with protocol fee mechanism
-        _callWithProtocolFee(
+        _externalCallWithProtocolFee(
             address(contractAddr),
             mintCallData,
             params.currency,
@@ -132,7 +132,7 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
     }
 
     function updateProtocolFee(
-        address _recipient,
+        address payable _recipient,
         uint96 _bps
     ) external onlyOwner {
         _updateProtocolFee(_recipient, _bps);

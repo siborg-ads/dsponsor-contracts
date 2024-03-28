@@ -7,7 +7,7 @@ import {
   Signer,
   toUtf8Bytes
 } from 'ethers'
-import { ethers } from 'hardhat'
+import { ethers, network } from 'hardhat'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { executeByForwarder } from '../utils/eip712'
 import {
@@ -61,7 +61,7 @@ describe('DSponsorNFT', function () {
 
   let initParams: IDSponsorNFTBase.InitParamsStruct
 
-  const chainId = 137
+  const chainId = network.config.chainId
   let tokenId = 10
 
   const tokenData = 'keyword'

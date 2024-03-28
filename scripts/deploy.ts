@@ -6,18 +6,23 @@ import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 import { ZERO_ADDRESS } from '../utils/constants'
 
 async function deploy() {
-  const treasuryAddr = '0x64e8f7c2b4fd33f5e8470f3c6df04974f90fc2ca' //  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf' dsponsor.eth
+  const treasuryAddr = '0x64e8f7c2b4fd33f5e8470f3c6df04974f90fc2ca' // ARB: '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf' dsponsor.eth
 
-  const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  const swapRouter = '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E' // ARB: '0xE592427A0AEce92De3Edee1F18E0157C05861564' https://docs.uniswap.org/contracts/v3/reference/deployments
 
   const protocolFeeBps = 400
+
+  const forwarderAddress = ZERO_ADDRESS
 
   const { provider } = ethers
   const network = await provider.getNetwork()
   const chainId = network.chainId
+
   const [deployer] = await ethers.getSigners()
-  const deployerAddr = await deployer.getAddress() // 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-  console.log(`Deploying to chainId: ${chainId} with deployer: ${deployerAddr}`)
+  const deployerAddr = await deployer.getAddress()
+  console.log(
+    `Deploying to ${network.name} (chainId: ${chainId}) with deployer: ${deployerAddr}`
+  )
 
   const DSponsorNFTImplementation = await ethers.deployContract(
     'DSponsorNFT',
@@ -38,7 +43,7 @@ async function deploy() {
 
   const DSponsorAdminArgs = [
     DSponsorNFTFactoryAddress,
-    ZERO_ADDRESS,
+    forwarderAddress,
     deployerAddr,
     swapRouter,
     treasuryAddr,
@@ -51,16 +56,16 @@ async function deploy() {
   const DSponsorAdminAddress = await DSponsorAdmin.getAddress()
   console.log('DSponsorAdmin deployed to:', DSponsorAdminAddress)
 
-  const ERC20Addr = '0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa' // WETH mumbai,
-  // pool uniV3 testnet 0,02297 WETH per MATIC / 43,5329 MATIC per WETH
+  const ERC20Addr = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984' // UNI SEPOLIA,
+  // pool uniV3 testnet 1 UNI = 4,99778 ETH - 1 ETH = 0,20054 UNI
 
   const adParameters: string[] = ['logoUrl', 'linkUrl']
 
   const contractURI =
     'ipfs://bafkreicb5pvxuifwlchdxahd5i34sro2buhvzywwod5vdhscn77rsn7abu'
 
-  const ERC20Amount = parseEther('0.00033')
-  const valuePrice = parseEther('1')
+  const ERC20Amount = parseEther('0.0002')
+  const valuePrice = parseEther('0.0001')
 
   const offerOptions: IDSponsorAgreements.OfferOptionsStruct = {
     admins: [deployerAddr],
@@ -70,7 +75,7 @@ async function deploy() {
 
   const offerInit: IDSponsorAgreements.OfferInitParamsStruct = {
     name: 'Offer TEST',
-    rulesURI: contractURI,
+    offerMetadata: contractURI,
     options: offerOptions
   }
 
@@ -112,6 +117,22 @@ async function deploy() {
 
   console.log('DSponsorNFT deployed to:', DSponsorNFTAddress)
 
+  const DSponsorMarketplaceArgs = [
+    forwarderAddress,
+    deployerAddr,
+    swapRouter,
+    treasuryAddr,
+    protocolFeeBps
+  ]
+
+  const DSponsorMarketplace = await ethers.deployContract(
+    'DSponsorMarketplace',
+    DSponsorMarketplaceArgs
+  )
+
+  const DSponsorMarketplaceAddress = await DSponsorMarketplace.getAddress()
+  console.log('DSponsorMarketplace deployed to:', DSponsorMarketplaceAddress)
+
   await run('verify:verify', {
     address: DSponsorNFTImplementationAddress,
     constructorArguments: []
@@ -124,6 +145,10 @@ async function deploy() {
     address: DSponsorAdminAddress,
     constructorArguments: DSponsorAdminArgs
   })
+  await run('verify:verify', {
+    address: DSponsorMarketplaceAddress,
+    constructorArguments: DSponsorMarketplaceArgs
+  })
 }
 
 deploy().catch((error) => {
@@ -131,10 +156,13 @@ deploy().catch((error) => {
   process.exitCode = 1
 })
 
-/*
-Deploying to chainId: 80001 with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0xFEAE8589A5e28bB8e9271F11062f8ECAb2bDB6EA
-DSponsorNFTFactory deployed to: 0x06DC507a5b0Dd3aF54EBB56177f27283456048C4
-DSponsorAdmin deployed to: 0xA82B4bBc8e6aC3C100bBc769F4aE0360E9ac9FC3
-DSponsorNFT deployed to: 0x8C4115060A52DD8693521095f6f150D3F2aaFa53
+/* 
+
+Deploying to sepolia (chainId: 11155111) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0x73adbA5994B48F5139730BE55622f298445179B0
+DSponsorNFTFactory deployed to: 0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D
+DSponsorAdmin deployed to: 0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09
+DSponsorNFT deployed to: 0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47
+DSponsorMarketplace deployed to: 0x86aDf604B5B72d270654F3A0798cabeBC677C7fc
+
 */

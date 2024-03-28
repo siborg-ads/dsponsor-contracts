@@ -61,7 +61,9 @@ describe('DSponsorAdmin', function () {
 
   const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 
-  let USDCeAddr = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
+  let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
+  let WethContract: ERC20
+  let USDCeAddr = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'
   let USDCeContract: ERC20
 
   const ERC20Amount: bigint = parseEther('15')
@@ -102,6 +104,7 @@ describe('DSponsorAdmin', function () {
     treasuryAddr = await treasury.getAddress()
 
     USDCeContract = await ethers.getContractAt('ERC20', USDCeAddr)
+    WethContract = await ethers.getContractAt('ERC20', WethAddr)
 
     forwarder = await ethers.deployContract('ERC2771Forwarder', [])
     await forwarder.waitForDeployment()
@@ -131,8 +134,8 @@ describe('DSponsorAdmin', function () {
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 100, // 1%
-      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr],
-      prices: [ERC20Amount, valuePrice, USDCePrice],
+      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr, WethAddr],
+      prices: [ERC20Amount, valuePrice, USDCePrice, valuePrice],
       allowedTokenIds: []
     }
 
@@ -154,7 +157,7 @@ describe('DSponsorAdmin', function () {
 
     offerInit = {
       name: 'Offer X',
-      rulesURI: 'rulesURI',
+      offerMetadata: 'offerMetadata',
       options: offerOptions
     }
 
@@ -190,8 +193,8 @@ describe('DSponsorAdmin', function () {
       )
       expect(await DSponsorAdmin.trustedForwarder()).to.equal(forwarderAddress)
       expect(await DSponsorAdmin.owner()).to.equal(deployerAddr)
-      expect(await DSponsorAdmin.recipient()).to.equal(treasuryAddr)
-      expect(await DSponsorAdmin.bps()).to.equal(bps)
+      expect(await DSponsorAdmin.feeRecipient()).to.equal(treasuryAddr)
+      expect(await DSponsorAdmin.feeBps()).to.equal(bps)
     })
   })
 
@@ -207,7 +210,7 @@ describe('DSponsorAdmin', function () {
       )
     })
 
-    it('Should allow deployer to the protocol fee', async function () {
+    it('Should allow deployer to update the protocol fee', async function () {
       await loadFixture(deployFixture)
 
       await expect(
@@ -215,8 +218,8 @@ describe('DSponsorAdmin', function () {
       )
         .to.emit(DSponsorAdmin, 'FeeUpdate')
         .withArgs(user2Addr, 500)
-      expect(await DSponsorAdmin.recipient()).to.equal(user2Addr)
-      expect(await DSponsorAdmin.bps()).to.equal(500)
+      expect(await DSponsorAdmin.feeRecipient()).to.equal(user2Addr)
+      expect(await DSponsorAdmin.feeBps()).to.equal(500)
     })
 
     it('Should revert if fee recipient is ZERO_ADDRESS', async function () {
@@ -225,6 +228,14 @@ describe('DSponsorAdmin', function () {
       await expect(
         DSponsorAdmin.connect(deployer).updateProtocolFee(ZERO_ADDRESS, 500)
       ).to.revertedWithCustomError(DSponsorAdmin, 'ZeroAddress')
+    })
+
+    it('Should revert if fee bps > 100 %', async function () {
+      await loadFixture(deployFixture)
+
+      await expect(
+        DSponsorAdmin.connect(deployer).updateProtocolFee(user2Addr, 10001)
+      ).to.revertedWithCustomError(DSponsorAdmin, 'InvalidBps')
     })
   })
 
@@ -272,7 +283,7 @@ describe('DSponsorAdmin', function () {
       await expect(
         DSponsorAdmin.connect(user).createDSponsorNFTAndOffer(
           initDSponsorNFTParams,
-          Object.assign({}, offerInit, { rulesURI: '' })
+          Object.assign({}, offerInit, { offerMetadata: '' })
         )
       ).to.revertedWithCustomError(DSponsorAdmin, 'EmptyString')
     })
@@ -679,7 +690,75 @@ describe('DSponsorAdmin', function () {
         )
       })
 
-      it('Should work with a valid swap', async function () {
+      it('Should work with a wrapping swap', async function () {
+        await loadFixture(deployFixture)
+
+        const fee = (valuePrice * BigInt(bps.toString())) / BigInt('10000')
+        const value = valuePrice + fee
+
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeTokenBalances(
+          WethContract,
+          [user, owner, treasury, DSponsorAdmin],
+          [0, valuePrice, fee, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeTokenBalances(
+          DSponsorNFT,
+          [user, user2, owner, treasury, DSponsorAdmin],
+          [0, 1, 0, 0, 0]
+        )
+
+        tokenId++
+        await expect(
+          DSponsorAdmin.connect(user).mintAndSubmit(
+            {
+              tokenId,
+              to: user2Addr,
+              currency: WethAddr,
+              tokenData,
+              offerId,
+              adParameters,
+              adDatas,
+              referralAdditionalInformation
+            },
+            { value }
+          )
+        ).to.changeEtherBalances(
+          [user, owner, treasury, DSponsorAdmin],
+          [-value, 0, 0, 0]
+        )
+      })
+
+      it('Should work with a valid ERC20 swap', async function () {
         await loadFixture(deployFixture)
 
         const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
@@ -769,7 +848,7 @@ describe('DSponsorAdmin', function () {
               adDatas,
               referralAdditionalInformation
             },
-            { value: parseEther('0.01') }
+            { value: 10 }
           )
         ).to.reverted
       })
@@ -871,7 +950,7 @@ describe('DSponsorAdmin', function () {
         ).to.revertedWithCustomError(ERC20Mock, 'ERC20InsufficientBalance')
 
         expect(
-          await ERC20Mock.balanceOf(await DSponsorAdmin.recipient())
+          await ERC20Mock.balanceOf(await DSponsorAdmin.feeRecipient())
         ).to.equal(0)
       })
 
@@ -879,7 +958,7 @@ describe('DSponsorAdmin', function () {
         await loadFixture(deployFixture)
 
         const balanceBeforeCall = await provider.getBalance(
-          await DSponsorAdmin.recipient()
+          await DSponsorAdmin.feeRecipient()
         )
 
         await expect(
@@ -899,7 +978,7 @@ describe('DSponsorAdmin', function () {
         ).to.revertedWithCustomError(DSponsorAdmin, 'InsufficientFunds')
 
         const balanceAfterCall = await provider.getBalance(
-          await DSponsorAdmin.recipient()
+          await DSponsorAdmin.feeRecipient()
         )
 
         expect(balanceAfterCall).to.equal(balanceBeforeCall)
@@ -1046,8 +1125,22 @@ describe('DSponsorAdmin', function () {
       }
       const contractURI = 'ipfs://QmX....'
 
-      // todo-creator: terms of service, PDF stored on IPFS
-      const rulesURI = 'ipfs://QmX....'
+      // todo-creator: creator metadata, terms of service and more - JSON stored on IPFS
+      const rules = {
+        creatorName: 'SiBorg',
+        creatorDescription:
+          'SiBorg app enhances Twitter spaces listening experience',
+        creatorImg: 'https://external-link-url.com/image.png',
+        creatorCategory: ['dApp', 'Social', 'Media'],
+        exposureCategory: ['DeFi', 'NFT', 'Crypto'],
+        offerName: contractMetadata.name,
+        offerDescription: 'Ad spaces for SiBorg search results',
+        offerImg: 'https://external-link-url.com/image.png',
+        terms: 'ipfs://QmX....',
+        validFromDate: '2024-01-01T00:00:00Z',
+        validToDate: '2024-12-31T23:59:59Z'
+      }
+      const offerMetadata = 'ipfs://QmX....'
 
       // todo-creator: define the first keywords to be tokenized, and their prices / currencies
       const tokenizedKeywords = ['bitcoin', 'ethereum', 'nft', 'crypto', 'eth']
@@ -1060,18 +1153,18 @@ describe('DSponsorAdmin', function () {
         // sponsor has enough in balance to mint
         parseEther('0.5'),
 
-        // we want to set the price of 1 MATIC for 'ethereum'
-        parseEther('150.50')
+        // we want to set the price of 0.45 ETH for 'ethereum'
+        parseEther('0.05')
       ]
       // set 6.25 USDCe for other tokens like 'nft'
-      // as sponsor does have USDCe tokens, he will pay in MATIC, the contract will swap
+      // as sponsor does have USDCe tokens, he will pay in native token, the contract will swap
       const defaultCurrency = USDCeAddr
       const defaultAmount = BigInt((6.25 * 10 ** 6).toString())
 
       // todo-tech: fetch the current price of USDCe, with Moralis API for example
       // https://docs.moralis.io/web3-data-api/evm/reference/price/get-token-price?address=0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0&chain=eth&include=percent_change
       // set the value accordingly, add a margin for the swap (will be refund to the sponsor if not used)
-      const defaultAmountValue = parseEther('18.25') // 18.25 MATIC for 6.25 USDCe
+      const defaultAmountValue = parseEther('1') // 1 ETH for 6.25 USDCe
 
       // todo-tech: referral system to apply, here we set vitalik.eth as the referral...
       const referralAdditionalInformation =
@@ -1117,7 +1210,7 @@ describe('DSponsorAdmin', function () {
 
       const siborgOfferInit: IDSponsorAgreements.OfferInitParamsStruct = {
         name: contractMetadata.name,
-        rulesURI,
+        offerMetadata,
         options: {
           admins: [siborgOwnerAddr],
           validators: [],
@@ -1191,7 +1284,7 @@ describe('DSponsorAdmin', function () {
        * 3. Mint a token and submit an ad proposal
        */
 
-      const fetchedBps = await DSponsorAdmin.connect(sponsor1).bps()
+      const fetchedBps = await DSponsorAdmin.connect(sponsor1).feeBps()
       const mintAmounts = (amount: bigint) => {
         const fee = (amount * fetchedBps) / BigInt('10000')
         const amountWithFee = amount + fee
@@ -1242,11 +1335,8 @@ describe('DSponsorAdmin', function () {
         currency: currencies[1],
         tokenData: tokenizedKeywords[1],
         offerId: siborgOfferId,
-        adParameters: [adParameters[0], adParameters[1]],
-        adDatas: [
-          'https://www.ethforever.com',
-          'ipfs://ipfshash/ethever-img5:1.png'
-        ],
+        adParameters: [], // no ad data submitted
+        adDatas: [],
         referralAdditionalInformation
       }
       await ERC20Mock.connect(sponsor2).approve(
@@ -1312,7 +1402,7 @@ describe('DSponsorAdmin', function () {
       expect(await SiborgDSponsorNFT.MAX_SUPPLY()).to.be.equal(uint256Max)
 
       /**
-       * siborgOwner mints and transfer it
+       * siborgOwner mints and transfers it
        * (simulate secondary sale)
        */
       await SiborgDSponsorNFT.connect(siborgOwner).mint(

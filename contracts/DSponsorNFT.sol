@@ -343,6 +343,7 @@ contract DSponsorNFT is
         string memory _tokenURI
     ) public onlyOwner {
         tokenURIs[_tokenId] = _tokenURI;
+        emit MetadataUpdated(_tokenId);
     }
 
     /**
@@ -361,6 +362,7 @@ contract DSponsorNFT is
         }
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             tokenURIs[_tokenIds[i]] = _tokenURIs[i];
+            emit MetadataUpdated(_tokenIds[i]);
         }
     }
 
@@ -548,6 +550,7 @@ contract DSponsorNFT is
 
     function _setBaseURI(string memory _baseURI) private {
         baseURI = _baseURI;
+        emit BatchMetadataUpdate(0, type(uint256).max);
     }
 
     function _setContractURI(string memory _contractURI) private {
