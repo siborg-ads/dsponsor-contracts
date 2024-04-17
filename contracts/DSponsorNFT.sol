@@ -101,7 +101,7 @@ contract DSponsorNFT is
         _setContractURI(params.contractURI);
         MAX_SUPPLY = params.maxSupply;
 
-        // Restrict mint to a minter address
+        /// @dev if not address(0), mint is only possible from `minter`and `owner` address
         MINTER = params.minter;
 
         _setDefaultRoyalty(params.initialOwner, params.royaltyBps);
@@ -159,7 +159,7 @@ contract DSponsorNFT is
 
         // if sender is the owner, sender can mint and does not need to pay
         if (_msgSender() != owner()) {
-            if (_msgSender() != MINTER) {
+            if (MINTER != address(0) && _msgSender() != MINTER) {
                 revert UnauthorizedToMint();
             }
 
@@ -555,6 +555,10 @@ contract DSponsorNFT is
 
     function _setContractURI(string memory _contractURI) private {
         contractURI = _contractURI;
+
+        emit ContractURIUpdated(_contractURI);
+
+        ///@dev ERC-7572
         emit ContractURIUpdated();
     }
 

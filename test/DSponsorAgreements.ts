@@ -227,7 +227,8 @@ describe('DSponsorAgreements', function () {
           false,
           offerInit.name,
           offerInit.offerMetadata,
-          ERC721MockAddress
+          ERC721MockAddress,
+          ownerAddr
         )
 
       expect(
@@ -628,7 +629,8 @@ describe('DSponsorAgreements', function () {
           true,
           'newName',
           'newRules',
-          ERC721MockAddress
+          ERC721MockAddress,
+          ownerAddr
         )
 
       expect(
@@ -670,7 +672,12 @@ describe('DSponsorAgreements', function () {
         )
       )
         .to.emit(DSponsorAgreements, 'UpdateOfferAdParameter')
-        .withArgs(offerIdERC721Mock, 'test', true)
+        .withArgs(
+          offerIdERC721Mock,
+          ethers.keccak256(new TextEncoder().encode('test')),
+          true,
+          'test'
+        )
 
       await expect(
         DSponsorAgreements.connect(user2).updateOffer(
@@ -944,7 +951,8 @@ describe('DSponsorAgreements', function () {
           false,
           offerInit.name,
           offerInit.offerMetadata,
-          ERC721MockAddress
+          ERC721MockAddress,
+          ownerAddr
         )
     })
 

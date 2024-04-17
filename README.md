@@ -42,11 +42,11 @@ This contract manages secondary sales and includes:
 
 ### Sepolia Testnet (Chain ID = 11155111)
 
-- `DSponsorAdmin`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://sepolia.etherscan.io/address/0xdf42633bd40e8f46942e44a80f3a58d0ec971f09)
+- `DSponsorAdmin`: [`0xE442802706F3603d58F34418Eac50C78C7B4E8b3`](https://sepolia.etherscan.io/address/0xE442802706F3603d58F34418Eac50C78C7B4E8b3)
 
-- Example of `DSponsorNFT` deployed: [`0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47`](https://sepolia.etherscan.io/address/0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47)
+- Example of `DSponsorNFT` deployed: [`0x83476E4178394fd4ac6D958a6933247D3531dBd9`](https://sepolia.etherscan.io/address/0x83476E4178394fd4ac6D958a6933247D3531dBd9)
 
-- `DSponsorMarketplace`: [`0x86adf604b5b72d270654f3a0798cabebc677c7fc`](https://sepolia.etherscan.io/address/0x86adf604b5b72d270654f3a0798cabebc677c7fc)
+- `DSponsorMarketplace`: [`0xaC03B675FA9644279b92F060BF542EED54F75599`](https://sepolia.etherscan.io/address/0xaC03B675FA9644279b92F060BF542EED54F75599)
 
 ## Development
 

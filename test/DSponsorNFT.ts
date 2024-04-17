@@ -838,9 +838,9 @@ describe('DSponsorNFT', function () {
       await DSponsorNFT.connect(owner).setBaseURI(baseURI2)
       expect(await DSponsorNFT.baseURI()).to.be.equal(baseURI2)
 
-      await expect(
-        DSponsorNFT.connect(owner).setContractURI(contractURI2)
-      ).to.emit(DSponsorNFT, 'ContractURIUpdated')
+      await expect(DSponsorNFT.connect(owner).setContractURI(contractURI2))
+        .to.emit(DSponsorNFT, 'ContractURIUpdated(string)')
+        .withArgs(contractURI2)
       expect(await DSponsorNFT.contractURI()).to.be.equal(contractURI2)
 
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(

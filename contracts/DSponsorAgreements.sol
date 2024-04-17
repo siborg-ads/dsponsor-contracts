@@ -402,7 +402,8 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
             disable,
             name,
             offerMetadata,
-            _sponsoringOffers[offerId].nftContract
+            _sponsoringOffers[offerId].nftContract,
+            _msgSender()
         );
     }
 
@@ -412,10 +413,14 @@ contract DSponsorAgreements is IDSponsorAgreements, ERC2771ContextOwnable {
         string[] calldata adParameters
     ) private {
         for (uint256 i = 0; i < adParameters.length; i++) {
-            _sponsoringOffers[offerId].adParameters[
-                _hashString(adParameters[i])
-            ] = enable;
-            emit UpdateOfferAdParameter(offerId, adParameters[i], enable);
+            bytes32 adParameterHash = _hashString(adParameters[i]);
+            _sponsoringOffers[offerId].adParameters[adParameterHash] = enable;
+            emit UpdateOfferAdParameter(
+                offerId,
+                adParameterHash,
+                enable,
+                adParameters[i]
+            );
         }
     }
 

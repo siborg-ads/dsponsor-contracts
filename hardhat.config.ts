@@ -54,6 +54,7 @@ const config: HardhatUserConfig = {
     enabled: true,
     apiKey: {
       arbitrum: process.env.ARBISCAN_API_KEY as string,
+      // sepolia: process.env.ARBISCAN_API_KEY as string
       sepolia: process.env.ETHERSCAN_API_KEY as string
     }
   },

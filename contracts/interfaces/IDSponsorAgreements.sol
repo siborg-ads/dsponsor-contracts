@@ -108,7 +108,8 @@ interface IDSponsorAgreements {
         bool indexed disable,
         string name,
         string offerMetadata,
-        IERC721 indexed nftContract
+        IERC721 indexed nftContract,
+        address msgSender
     );
     event UpdateOfferAdmin(
         uint256 indexed offerId,
@@ -122,8 +123,9 @@ interface IDSponsorAgreements {
     );
     event UpdateOfferAdParameter(
         uint256 indexed offerId,
-        string indexed adParameter,
-        bool indexed enable
+        bytes32 indexed adParameterHash,
+        bool indexed enable,
+        string adParameter
     );
 
     /* ****************

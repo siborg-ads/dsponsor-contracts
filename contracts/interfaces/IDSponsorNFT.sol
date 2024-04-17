@@ -69,6 +69,7 @@ interface IDSponsorNFTBase {
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
     event MetadataUpdated(uint256 indexed tokenId);
 
+    event ContractURIUpdated(string contractURI);
     event ContractURIUpdated();
 
     event Mint(
