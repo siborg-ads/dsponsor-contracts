@@ -58,7 +58,7 @@ describe('DSponsorMarketplace', function () {
   let treasury: Signer
   let treasuryAddr: string
 
-  const swapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  const swapRouter = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
 
   let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
   let WethContract: ERC20

@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
+import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
 interface WETH {
     function deposit() external payable;
@@ -15,7 +15,7 @@ interface WETH {
     function withdraw(uint256 wad) external;
 }
 
-interface UniV3SwapRouter is ISwapRouter, IPeripheryPayments {
+interface UniV3SwapRouter is IV3SwapRouter, IPeripheryPayments {
     function WETH9() external view returns (address);
 }
 
@@ -216,13 +216,12 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             WETH(weth).deposit{value: amountOut}();
         } else {
             // perform the swap
-            ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
+            IV3SwapRouter.ExactOutputSingleParams memory params = IV3SwapRouter
                 .ExactOutputSingleParams({
                     tokenIn: weth,
                     tokenOut: currency,
                     fee: 3000,
                     recipient: address(this),
-                    deadline: block.timestamp,
                     amountOut: amount,
                     amountInMaximum: amountInMaximum,
                     sqrtPriceLimitX96: 0

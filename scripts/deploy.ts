@@ -45,7 +45,7 @@ const TREASURY_ADDR: ChainIdAddr = {
 // https://docs.uniswap.org/contracts/v3/reference/deployments
 const SWAP_ROUTER_ADDR: ChainIdAddr = {
   [SEPOLIA_CHAIN_ID]: '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  [ARB_CHAIN_ID]: '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  [ARB_CHAIN_ID]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
 }
 
 const PROTOCOL_FEE_BPS = 400
@@ -669,7 +669,7 @@ DSponsorMarketplace deployed to: 0xaC03B675FA9644279b92F060BF542EED54F75599  wit
   400
 ]
 Created offer {
-  offerId: '0',
+  offerId: '1',
   DSponsorNFTAddress: '0x83476E4178394fd4ac6D958a6933247D3531dBd9'
 }
 
