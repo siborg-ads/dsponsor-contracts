@@ -314,7 +314,8 @@ interface IDSponsorMarketplace {
     /// @dev Emitted when the parameters of a listing are updated.
     event ListingUpdated(
         uint256 indexed listingId,
-        address indexed listingCreator
+        address indexed listingCreator,
+        ListingUpdateParameters params
     );
 
     /// @dev Emitted when a listing is cancelled.

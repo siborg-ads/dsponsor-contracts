@@ -342,7 +342,7 @@ contract DSponsorMarketplace is
             }
         }
 
-        emit ListingUpdated(_listingId, targetListing.tokenOwner);
+        emit ListingUpdated(_listingId, targetListing.tokenOwner, _params);
     }
 
     /// @dev Lets a direct listing creator cancel their listing.

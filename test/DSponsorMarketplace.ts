@@ -178,20 +178,21 @@ describe('DSponsorMarketplace', function () {
     await DSponsorNFT.connect(user).approve(DSponsorMarketplaceAddress, tokenId)
 
     const startTime = (await now()) + BigInt('1') // 1 second in the future to anticipate the next block timestamp
-    listingParams = {
-      assetContract: DSponsorNFTAddress,
-      tokenId,
-      startTime,
-      secondsUntilEndTime: BigInt('3600'),
-      quantityToList: 1,
-      currencyToAccept: ERC20MockAddress,
-      reservePricePerToken: ERC20Amount,
-      buyoutPricePerToken: ERC20Amount * reserveToBuyMul,
-      transferType: transferTypeSale,
-      rentalExpirationTimestamp:
+    const rentalExpirationTimestamp =
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: listingTypeDirect
-    }
+      listingParams = {
+        assetContract: DSponsorNFTAddress,
+        tokenId,
+        startTime,
+        secondsUntilEndTime: BigInt('3600'),
+        quantityToList: 1,
+        currencyToAccept: ERC20MockAddress,
+        reservePricePerToken: ERC20Amount,
+        buyoutPricePerToken: ERC20Amount * reserveToBuyMul,
+        transferType: transferTypeSale,
+        rentalExpirationTimestamp,
+        listingType: listingTypeDirect
+      }
 
     await expect(DSponsorMarketplace.connect(user).createListing(listingParams))
       .to.emit(DSponsorMarketplace, 'ListingAdded')
@@ -1121,12 +1122,13 @@ describe('DSponsorMarketplace', function () {
     it('Should update direct sale listing', async function () {
       await loadFixture(directListingRentFixture)
 
+      const startTime = BigInt('1711648320')
       const updateParams: IDSponsorMarketplace.ListingUpdateParametersStruct = {
         quantityToList: 1,
         reservePricePerToken: ERC20Amount * BigInt('2'),
         buyoutPricePerToken: ERC20Amount * BigInt('3'),
         currencyToAccept: USDCeAddr,
-        startTime: await now(),
+        startTime,
         secondsUntilEndTime: BigInt('3600'),
         rentalExpirationTimestamp: listingParams.rentalExpirationTimestamp
       }
@@ -1135,7 +1137,15 @@ describe('DSponsorMarketplace', function () {
         DSponsorMarketplace.connect(user).updateListing(listingId, updateParams)
       )
         .to.emit(DSponsorMarketplace, 'ListingUpdated')
-        .withArgs(listingId, userAddr)
+        .withArgs(listingId, userAddr, [
+          updateParams.quantityToList,
+          updateParams.reservePricePerToken,
+          updateParams.buyoutPricePerToken,
+          updateParams.currencyToAccept,
+          updateParams.startTime,
+          updateParams.secondsUntilEndTime,
+          updateParams.rentalExpirationTimestamp
+        ])
     })
 
     it('Should buy a token from a direct listing', async function () {
