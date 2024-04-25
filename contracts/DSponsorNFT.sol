@@ -104,7 +104,7 @@ contract DSponsorNFT is
         /// @dev if not address(0), mint is only possible from `minter`and `owner` address
         MINTER = params.minter;
 
-        _setDefaultRoyalty(params.initialOwner, params.royaltyBps);
+        _setRoyalty(params.initialOwner, params.royaltyBps);
 
         for (uint256 i = 0; i < params.currencies.length; i++) {
             _setDefaultMintPrice(params.currencies[i], true, params.prices[i]);
@@ -299,7 +299,7 @@ contract DSponsorNFT is
      * @param feeBps Royalty fee in basis points (1% = 100 bps).
      */
     function setRoyalty(address receiver, uint96 feeBps) external onlyOwner {
-        _setDefaultRoyalty(receiver, feeBps);
+        _setRoyalty(receiver, feeBps);
     }
 
     /**
@@ -608,5 +608,10 @@ contract DSponsorNFT is
     function _setTokensAllowlist(uint256 tokenId, bool allowed) private {
         allowedTokenIds[tokenId] = allowed;
         emit TokensAllowlistUpdated(tokenId, allowed);
+    }
+
+    function _setRoyalty(address receiver, uint96 feeBps) private {
+        _setDefaultRoyalty(receiver, feeBps);
+        emit RoyalitiesSet(receiver, feeBps);
     }
 }

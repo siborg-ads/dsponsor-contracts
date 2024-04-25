@@ -978,7 +978,9 @@ describe('DSponsorNFT', function () {
       expectedRoyalty =
         (salePrice * BigInt(newFee.toString())) / BigInt('10000')
 
-      await DSponsorNFT.connect(owner).setRoyalty(user, newFee)
+      await expect(DSponsorNFT.connect(owner).setRoyalty(user, newFee))
+        .to.emit(DSponsorNFT, 'RoyalitiesSet')
+        .withArgs(user, newFee)
 
       expect(
         await DSponsorNFT.royaltyInfo(tokenId, salePrice)

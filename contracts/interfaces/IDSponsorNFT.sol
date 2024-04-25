@@ -81,6 +81,8 @@ interface IDSponsorNFTBase {
         string tokenData
     );
 
+    event RoyalitiesSet(address receiver, uint96 bps);
+
     event TokensAllowlist(bool indexed allowed);
 
     event TokensAllowlistUpdated(uint256 tokenId, bool indexed allowed);
