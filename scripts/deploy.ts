@@ -169,7 +169,7 @@ async function deploySiBorgOffer() {
 
   const adParameters: string[] = [
     'linkURL',
-    'imageURL-320x50',
+    'imageURL-6.4:1',
     'xCreatorHandle',
     'xSpaceId'
   ]
@@ -533,7 +533,7 @@ async function deploySiBorgOffer() {
     const initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct = {
       name,
       symbol: 'DSNFT-SIBORG',
-      baseURI: 'https://relayer.dsponsor.com/baseURI',
+      baseURI: 'https://relayer.dsponsor.com/tokenMetadata',
       contractURI,
       maxSupply: UINT256_MAX,
       minter: deployerAddr, // will be replaced by DSponsorAdmin

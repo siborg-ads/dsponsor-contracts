@@ -1194,7 +1194,65 @@ describe('DSponsorMarketplace', function () {
       )
 
       await expect(tx).to.changeEtherBalances([deployer], [-value])
+
+      // the final user get the refund
       expect(await provider.getBalance(user2Addr)).to.be.gt(balanceUser2)
+    })
+
+    it('Should fail if not enough value to buy multiple tokens ', async function () {
+      const { WETHTotalPrice, USDCeTotalPrice } = await loadFixture(
+        multipleDirectSalesFixture
+      )
+
+      const value = parseEther('1.0000000001')
+
+      await expect(
+        DSponsorMarketplace.connect(deployer).buy(
+          [
+            {
+              listingId: 0,
+              buyFor: user2Addr,
+              quantity: 1,
+              currency: USDCeAddr,
+              totalPrice: USDCeTotalPrice,
+              referralAdditionalInformation
+            },
+            {
+              listingId: 1,
+              buyFor: user2Addr,
+              quantity: 1,
+              currency: WethAddr,
+              totalPrice: WETHTotalPrice,
+              referralAdditionalInformation
+            }
+          ],
+          { value }
+        )
+      ).to.be.revertedWithCustomError(DSponsorMarketplace, 'InsufficientFunds')
+
+      await expect(
+        DSponsorMarketplace.connect(deployer).buy(
+          [
+            {
+              listingId: 1,
+              buyFor: user2Addr,
+              quantity: 1,
+              currency: WethAddr,
+              totalPrice: WETHTotalPrice,
+              referralAdditionalInformation
+            },
+            {
+              listingId: 0,
+              buyFor: user2Addr,
+              quantity: 1,
+              currency: USDCeAddr,
+              totalPrice: USDCeTotalPrice,
+              referralAdditionalInformation
+            }
+          ],
+          { value }
+        )
+      ).to.be.revertedWith('STF')
     })
 
     it('Should rent a token from a direct listing', async function () {
