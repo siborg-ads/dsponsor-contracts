@@ -4,9 +4,8 @@ import {
   BaseContract,
   parseEther,
   Signer,
-  toUtf8Bytes,
-  keccak256,
-  BigNumberish
+  BigNumberish,
+  formatUnits
 } from 'ethers'
 import { ethers } from 'hardhat'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
@@ -22,14 +21,19 @@ import {
   ReentrantDSponsorAdmin
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
-import { ZERO_ADDRESS } from '../utils/constants'
+import {
+  SWAP_ROUTER_ADDR,
+  UINT256_MAX,
+  USDC_ADDR,
+  WETH_ADDR,
+  ZERO_ADDRESS
+} from '../utils/constants'
 import { stringToUint256 } from '../utils/convert'
-
-const uint256Max = BigInt(
-  '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-)
+import { getEthQuote } from '../utils/uniswapQuote'
 
 describe('DSponsorAdmin', function () {
+  const uint256Max = UINT256_MAX
+
   const provider = ethers.provider
 
   let DSponsorAdmin: DSponsorAdmin
@@ -59,16 +63,17 @@ describe('DSponsorAdmin', function () {
   let treasury: Signer
   let treasuryAddr: string
 
-  const swapRouter = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+  let chainId: string
+  let swapRouter
 
-  let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
+  let WethAddr: string
   let WethContract: ERC20
-  let USDCeAddr = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'
-  let USDCeContract: ERC20
+  let USDCAddr: string
+  let USDCContract: ERC20
 
   const ERC20Amount: bigint = parseEther('15')
   const valuePrice: bigint = parseEther('1')
-  const USDCePrice = BigInt((2 * 10 ** 6).toString()) // 2 USDCe
+  const USDCPrice = BigInt((2 * 10 ** 6).toString()) // 2 USDC
 
   const bps = 400
 
@@ -94,6 +99,13 @@ describe('DSponsorAdmin', function () {
   }
 
   async function deployFixture() {
+    const { chainId: chainIdBigInt } = await provider.getNetwork()
+    chainId = chainIdBigInt.toString()
+
+    swapRouter = SWAP_ROUTER_ADDR[chainId]
+    WethAddr = WETH_ADDR[chainId]
+    USDCAddr = USDC_ADDR[chainId]
+
     signers = await ethers.getSigners()
     ;[deployer, owner, user, user2, treasury] = signers
 
@@ -103,7 +115,7 @@ describe('DSponsorAdmin', function () {
     user2Addr = await user2.getAddress()
     treasuryAddr = await treasury.getAddress()
 
-    USDCeContract = await ethers.getContractAt('ERC20', USDCeAddr)
+    USDCContract = await ethers.getContractAt('ERC20', USDCAddr)
     WethContract = await ethers.getContractAt('ERC20', WethAddr)
 
     forwarder = await ethers.deployContract('ERC2771Forwarder', [])
@@ -134,8 +146,8 @@ describe('DSponsorAdmin', function () {
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 100, // 1%
-      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr, WethAddr],
-      prices: [ERC20Amount, valuePrice, USDCePrice, valuePrice],
+      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCAddr, WethAddr],
+      prices: [ERC20Amount, valuePrice, USDCPrice, valuePrice],
       allowedTokenIds: []
     }
 
@@ -761,8 +773,13 @@ describe('DSponsorAdmin', function () {
       it('Should work with a valid ERC20 swap', async function () {
         await loadFixture(deployFixture)
 
-        const fee = (USDCePrice * BigInt(bps.toString())) / BigInt('10000')
-        const value = parseEther('1000')
+        const fee = (USDCPrice * BigInt(bps.toString())) / BigInt('10000')
+
+        const totalPrice = USDCPrice + fee
+        const { amountInEth, amountInEthWithSlippage, amountUSDC } =
+          await getEthQuote(USDCAddr, totalPrice.toString())
+
+        const value = amountInEthWithSlippage // 0.3% slippage
 
         const balanceUser2BeforeSwap = await provider.getBalance(user2Addr)
 
@@ -771,25 +788,26 @@ describe('DSponsorAdmin', function () {
             {
               tokenId,
               to: user2Addr,
-              currency: USDCeAddr,
+              currency: USDCAddr,
               tokenData,
               offerId,
               adParameters,
               adDatas,
               referralAdditionalInformation
             },
-            { value: value }
+            { value }
           )
         ).to.changeTokenBalances(
-          USDCeContract,
+          USDCContract,
           [user, owner, treasury, DSponsorAdmin],
-          [0, USDCePrice, fee, 0]
+          [0, USDCPrice, fee, 0]
         )
 
         const balanceUser2AfterSwap = await provider.getBalance(user2Addr)
 
         // refund received by user2
-        expect(balanceUser2AfterSwap - balanceUser2BeforeSwap).to.be.gt(1)
+        const refund = balanceUser2AfterSwap - balanceUser2BeforeSwap
+        expect(refund).to.be.gt(1)
 
         tokenId++
         await expect(
@@ -797,7 +815,7 @@ describe('DSponsorAdmin', function () {
             {
               tokenId,
               to: user2Addr,
-              currency: USDCeAddr,
+              currency: USDCAddr,
               tokenData,
               offerId,
               adParameters,
@@ -818,7 +836,7 @@ describe('DSponsorAdmin', function () {
             {
               tokenId,
               to: user2Addr,
-              currency: USDCeAddr,
+              currency: USDCAddr,
               tokenData,
               offerId,
               adParameters,
@@ -841,7 +859,7 @@ describe('DSponsorAdmin', function () {
             {
               tokenId,
               to: user2Addr,
-              currency: USDCeAddr,
+              currency: USDCAddr,
               tokenData,
               offerId,
               adParameters,
@@ -1156,15 +1174,10 @@ describe('DSponsorAdmin', function () {
         // we want to set the price of 0.45 ETH for 'ethereum'
         parseEther('0.05')
       ]
-      // set 6.25 USDCe for other tokens like 'nft'
-      // as sponsor does have USDCe tokens, he will pay in native token, the contract will swap
-      const defaultCurrency = USDCeAddr
+      // set 6.25 USDC for other tokens like 'nft'
+      // as sponsor does have USDC tokens, he will pay in native token, the contract will swap
+      const defaultCurrency = USDCAddr
       const defaultAmount = BigInt((6.25 * 10 ** 6).toString())
-
-      // todo-tech: fetch the current price of USDCe, with Moralis API for example
-      // https://docs.moralis.io/web3-data-api/evm/reference/price/get-token-price?address=0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0&chain=eth&include=percent_change
-      // set the value accordingly, add a margin for the swap (will be refund to the sponsor if not used)
-      const defaultAmountValue = parseEther('1') // 1 ETH for 6.25 USDCe
 
       // todo-tech: referral system to apply, here we set vitalik.eth as the referral...
       const referralAdditionalInformation =
@@ -1173,7 +1186,7 @@ describe('DSponsorAdmin', function () {
       // todo-tech: specs regarding adParameters / integrations
       const adParameters = [
         'linkURL',
-        'img5:1URL',
+        'imageURL-5:1',
         'twitterSpaceID',
         'twitterUserID'
       ]
@@ -1377,20 +1390,29 @@ describe('DSponsorAdmin', function () {
         referralAdditionalInformation
       }
       const sponsor1BalanceBefore = await provider.getBalance(sponsor1Addr)
+
+      const totalPrice = mintAmounts(defaultAmount).amountWithFee
+      const { amountInEthWithSlippage } = await getEthQuote(
+        USDCAddr,
+        totalPrice.toString()
+      )
+
+      const value = amountInEthWithSlippage // 0.3% slippage
+
       const mintTx2 = await DSponsorAdmin.connect(sponsor2).mintAndSubmit(
         mintParams2,
         {
-          value: mintAmounts(defaultAmountValue).amountWithFee
+          value
         }
       )
       const sponsor1BalanceAfter = await provider.getBalance(sponsor1Addr)
       expect(sponsor1BalanceAfter).to.be.gt(sponsor1BalanceBefore)
       await expect(mintTx2).changeEtherBalances(
         [sponsor2, siborgOwner, treasury, DSponsorAdmin],
-        [mintAmounts(defaultAmountValue).amountWithFee * BigInt('-1'), 0, 0, 0]
+        [value * BigInt('-1'), 0, 0, 0]
       )
       await expect(mintTx2).changeTokenBalances(
-        USDCeContract,
+        USDCContract,
         [sponsor1, siborgOwner, treasury],
         [0, defaultAmount, mintAmounts(defaultAmount).fee]
       )
@@ -1441,7 +1463,7 @@ describe('DSponsorAdmin', function () {
             referralAdditionalInformation
           },
           {
-            value: mintAmounts(defaultAmountValue).amountWithFee
+            value
           }
         )
       ).to.be.revertedWithCustomError(SiborgDSponsorNFT, 'AlreadyMinted')
@@ -1463,7 +1485,7 @@ describe('DSponsorAdmin', function () {
             referralAdditionalInformation
           },
           {
-            value: mintAmounts(defaultAmountValue).amountWithFee
+            value
           }
         )
       ).to.be.revertedWithCustomError(SiborgDSponsorNFT, 'TokenNotAllowed')

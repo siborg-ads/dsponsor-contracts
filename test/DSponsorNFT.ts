@@ -832,7 +832,7 @@ describe('DSponsorNFT', function () {
       const tokenId = 0
 
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        `${initParams.baseURI}/${chainId}/${DSponsorNFTAddress}/${tokenId}`
+        `${initParams.baseURI}/${DSponsorNFTAddress}/${tokenId}`
       )
 
       await DSponsorNFT.connect(owner).setBaseURI(baseURI2)
@@ -844,14 +844,14 @@ describe('DSponsorNFT', function () {
       expect(await DSponsorNFT.contractURI()).to.be.equal(contractURI2)
 
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        `${baseURI2}/${chainId}/${DSponsorNFTAddress}/${tokenId}`
+        `${baseURI2}/${DSponsorNFTAddress}/${tokenId}`
       )
       await DSponsorNFT.connect(owner).setTokenURI(tokenId, tokenURI_0)
       expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(tokenURI_0)
 
       const tokenId2 = 10000000
       expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(
-        `${baseURI2}/${chainId}/${DSponsorNFTAddress}/${tokenId2}`
+        `${baseURI2}/${DSponsorNFTAddress}/${tokenId2}`
       )
       await DSponsorNFT.connect(owner).setTokenURIs([tokenId2], [tokenURI_0])
       expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(tokenURI_0)

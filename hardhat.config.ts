@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.ARBITRUM_RPC_URL as string,
-        blockNumber: 195167985
+        blockNumber: 207064843
       },
       chainId: 42161
     },

@@ -58,7 +58,6 @@ interface IDSponsorMarketplace {
      *  @param buyFor The receiver of the NFT being bought.
      *  @param quantity The amount of NFTs to buy from the direct listing.
      *  @param currency The currency to pay the price in.
-     *  @param totalPrice The total price to pay for the tokens being bought.
      *  @param referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      *
      *  @dev A sale will fail to execute if either:
@@ -73,7 +72,6 @@ interface IDSponsorMarketplace {
         address buyFor;
         uint256 quantity;
         address currency;
-        uint256 totalPrice;
         string referralAdditionalInformation;
     }
 
@@ -408,7 +406,7 @@ interface IDSponsorMarketplace {
     /**
      *  @notice Lets someone from multiple items from direct listings (fixed prices)
      */
-    function buy(BuyParams[] calldata params) external payable;
+    function buy(BuyParams calldata params) external payable;
 
     /**
      *  @notice Lets someone make an bid in an auction.

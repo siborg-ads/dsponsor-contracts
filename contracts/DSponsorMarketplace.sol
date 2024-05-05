@@ -365,47 +365,41 @@ contract DSponsorMarketplace is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     *  @dev Buy from several listings in one transaction, with the option to pay with native currency
+     *  @dev Buy from a direct listing with the option to pay with native currency
      * (to allow payment with delegated payment systems, payment by credit card)
      */
-    function buy(
-        BuyParams[] calldata _buyParams
-    ) external payable nonReentrant {
-        uint256 remainingToSpendInSwap = msg.value;
+    function buy(BuyParams calldata buyParams) external payable nonReentrant {
+        uint256 sentValue = msg.value;
+        address payer = _msgSender();
 
-        for (uint256 i = 0; i < _buyParams.length; i++) {
-            address payer = _msgSender();
+        uint256 totalPrice = listings[buyParams.listingId].buyoutPricePerToken *
+            buyParams.quantity;
 
-            BuyParams memory buyParams = _buyParams[i];
+        // Swap native currency to ERC20 if value is sent
+        if (sentValue > 0) {
+            // refund to "spender" once swap done,
+            // and not _msgSender() as it can be the address of a delegating payment system
+            address recipientRefund = buyParams.buyFor;
 
-            // Swap native currency to ERC20 if value is sent
-            if (remainingToSpendInSwap > 0) {
-                // refund to "spender" once all swaps done, to _msgSender() can be the address of a delegating payment system
-                address recipientRefund = i == _buyParams.length - 1
-                    ? buyParams.buyFor
-                    : address(this);
-
-                (, uint256 amountRefunded) = _swapNativeToERC20(
-                    buyParams.currency,
-                    buyParams.totalPrice,
-                    remainingToSpendInSwap,
-                    recipientRefund
-                );
-
-                remainingToSpendInSwap = amountRefunded;
-                payer = address(this);
-            }
-
-            _buy(
-                buyParams.listingId,
-                payer,
-                buyParams.buyFor,
-                buyParams.quantity,
+            _swapNativeToERC20(
                 buyParams.currency,
-                buyParams.totalPrice,
-                buyParams.referralAdditionalInformation
+                totalPrice,
+                sentValue,
+                recipientRefund
             );
+
+            payer = address(this);
         }
+
+        _buy(
+            buyParams.listingId,
+            payer,
+            buyParams.buyFor,
+            buyParams.quantity,
+            buyParams.currency,
+            totalPrice,
+            buyParams.referralAdditionalInformation
+        );
     }
 
     /// @dev Lets an account buy a given quantity of tokens from a listing.

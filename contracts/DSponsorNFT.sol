@@ -448,8 +448,6 @@ contract DSponsorNFT is
                     abi.encodePacked(
                         baseURI,
                         "/",
-                        block.chainid.toString(),
-                        "/",
                         address(this).toHexString(),
                         "/",
                         tokenId.toString()

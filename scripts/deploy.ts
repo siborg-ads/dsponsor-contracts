@@ -3,50 +3,19 @@ import { parseEther } from 'ethers'
 import { ethers, run } from 'hardhat'
 import { IDSponsorAgreements } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
-import { ZERO_ADDRESS } from '../utils/constants'
-import { Network } from 'hardhat/types'
+import {
+  FORWARDER_ADDR,
+  SWAP_ROUTER_ADDR,
+  TREASURY_ADDR,
+  USDC_ADDR,
+  WETH_ADDR,
+  ZERO_ADDRESS
+} from '../utils/constants'
 import { stringToUint256 } from '../utils/convert'
-
-const ARB_CHAIN_ID = '42161'
-const SEPOLIA_CHAIN_ID = '11155111'
-type ChainIdAddr = {
-  [key: string]: string
-}
 
 /***************************************
  * CONFIGURATION
  ***************************************/
-
-const USDC_ADDR: ChainIdAddr = {
-  [SEPOLIA_CHAIN_ID]: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8',
-  [ARB_CHAIN_ID]: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
-}
-const WETH_ADDR: ChainIdAddr = {
-  [SEPOLIA_CHAIN_ID]: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
-  [ARB_CHAIN_ID]: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
-}
-const UNI_ADDR: ChainIdAddr = {
-  // pool uniV3 testnet 1 UNI = 4,99778 ETH - 1 ETH = 0,20054 UNI
-  [SEPOLIA_CHAIN_ID]: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
-  [ARB_CHAIN_ID]: '0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0'
-}
-
-const FORWARDER_ADDR: ChainIdAddr = {
-  [SEPOLIA_CHAIN_ID]: '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
-  [ARB_CHAIN_ID]: ZERO_ADDRESS
-}
-
-const TREASURY_ADDR: ChainIdAddr = {
-  [SEPOLIA_CHAIN_ID]: '0x64e8f7c2b4fd33f5e8470f3c6df04974f90fc2ca',
-  // dsponsor.eth
-  [ARB_CHAIN_ID]: '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf'
-}
-
-// https://docs.uniswap.org/contracts/v3/reference/deployments
-const SWAP_ROUTER_ADDR: ChainIdAddr = {
-  [SEPOLIA_CHAIN_ID]: '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  [ARB_CHAIN_ID]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
-}
 
 const PROTOCOL_FEE_BPS = 400
 
@@ -169,7 +138,7 @@ async function deploySiBorgOffer() {
 
   const adParameters: string[] = [
     'linkURL',
-    'imageURL-6.4:1',
+    'imageURL-5:1',
     'xCreatorHandle',
     'xSpaceId'
   ]
@@ -207,8 +176,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.05'),
-      buyoutPricePerToken: parseEther('0.05'),
+      reservePricePerToken: parseEther('0.0000004'),
+      buyoutPricePerToken: parseEther('0.0000004'),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -259,8 +228,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((100 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((100 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
+      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -285,8 +254,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((45.5 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((45.5 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((5.5 * 10 ** 6).toString()), // 5.5 USDC
+      buyoutPricePerToken: BigInt((5.5 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -324,8 +293,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.04'),
-      buyoutPricePerToken: parseEther('0.05'),
+      reservePricePerToken: parseEther('0.0000004'),
+      buyoutPricePerToken: parseEther('0.0000004'),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -363,8 +332,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((100 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((100 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
+      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -389,8 +358,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('5'), // 5 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((45.5 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((45.5 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((5.5 * 10 ** 6).toString()), // 5.5 USDC
+      buyoutPricePerToken: BigInt((5.5 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -428,8 +397,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.04'),
-      buyoutPricePerToken: parseEther('0.05'),
+      reservePricePerToken: parseEther('0.0000004'),
+      buyoutPricePerToken: parseEther('0.0000004'),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -467,8 +436,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((100 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((100 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
+      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -493,8 +462,8 @@ async function deploySiBorgOffer() {
       secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
       quantityToList: 1,
       currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((45.5 * 10 ** 6).toString()), // 100 USDC
-      buyoutPricePerToken: BigInt((45.5 * 10 ** 6).toString()),
+      reservePricePerToken: BigInt((0.005 * 10 ** 6).toString()), // 0.005 USDC
+      buyoutPricePerToken: BigInt((0.005 * 10 ** 6).toString()),
       transferType: TRANSFER_TYPE_SALE,
       rentalExpirationTimestamp:
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
@@ -533,7 +502,7 @@ async function deploySiBorgOffer() {
     const initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct = {
       name,
       symbol: 'DSNFT-SIBORG',
-      baseURI: 'https://relayer.dsponsor.com/tokenMetadata',
+      baseURI: `https://relayer.dsponsor.com/api/${chainId}/tokenMetadata`,
       contractURI,
       maxSupply: UINT256_MAX,
       minter: deployerAddr, // will be replaced by DSponsorAdmin
@@ -649,28 +618,26 @@ deployContracts()
   })
 
 /* 
-
 Deploying to sepolia (chainId: 11155111) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0xaA1EA0ea57db2303ADEC7Ce0b9E9cfE9A26B749c
-DSponsorNFTFactory deployed to: 0x2a57e8E2fcFaeD282fe92712F8f6198e3cB273d1
-DSponsorAdmin deployed to: 0xE442802706F3603d58F34418Eac50C78C7B4E8b3  with args:  [
-  '0x2a57e8E2fcFaeD282fe92712F8f6198e3cB273d1',
+DSponsorNFTImplementation deployed to: 0x3Ee7e900F4629d7216844420b771Fed6cb7ba705
+DSponsorNFTFactory deployed to: 0x041f2E36c2fa7d09F5301C11a7F70bD3d01f7C84
+DSponsorAdmin deployed to: 0x6a768A9D9674D8e0D788b817eB38980b203A82DF  with args:  [
+  '0x041f2E36c2fa7d09F5301C11a7F70bD3d01f7C84',
   '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  '0x64e8f7c2b4fd33f5e8470f3c6df04974f90fc2ca',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
   400
 ]
-DSponsorMarketplace deployed to: 0xaC03B675FA9644279b92F060BF542EED54F75599  with args:  [
+DSponsorMarketplace deployed to: 0x83b4e1715e9296583f7109473E3D035386c04bb9  with args:  [
   '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  '0x64e8f7c2b4fd33f5e8470f3c6df04974f90fc2ca',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
   400
 ]
 Created offer {
-  offerId: '1',
-  DSponsorNFTAddress: '0x83476E4178394fd4ac6D958a6933247D3531dBd9'
+  offerId: 1n,
+  DSponsorNFTAddress: '0x90F336ab07964eF674F0af6A0C5664971574CaE6'
 }
-
 */

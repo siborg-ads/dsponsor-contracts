@@ -1,14 +1,7 @@
 import 'dotenv/config'
 import { expect } from 'chai'
-import {
-  BaseContract,
-  parseEther,
-  Signer,
-  toUtf8Bytes,
-  keccak256,
-  BigNumberish
-} from 'ethers'
-import { ethers, network } from 'hardhat'
+import { BaseContract, parseEther, Signer } from 'ethers'
+import { ethers } from 'hardhat'
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers'
 import { executeByForwarder } from '../utils/eip712'
 import {
@@ -21,8 +14,14 @@ import {
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 
-import { ZERO_ADDRESS } from '../utils/constants'
+import {
+  SWAP_ROUTER_ADDR,
+  USDC_ADDR,
+  WETH_ADDR,
+  ZERO_ADDRESS
+} from '../utils/constants'
 import { IDSponsorMarketplace } from '../typechain-types/contracts/DSponsorMarketplace'
+import { getEthQuote } from '../utils/uniswapQuote'
 
 const listingTypeDirect = 0
 const listingTypeAuction = 1
@@ -58,16 +57,17 @@ describe('DSponsorMarketplace', function () {
   let treasury: Signer
   let treasuryAddr: string
 
-  const swapRouter = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+  let chainId: string
+  let swapRouter
 
-  let WethAddr = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
+  let WethAddr: string
   let WethContract: ERC20
-  let USDCeAddr = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'
-  let USDCeContract: ERC20
+  let USDCAddr: string
+  let USDCContract: ERC20
 
   const ERC20Amount: bigint = parseEther('15')
   const valuePrice: bigint = parseEther('1')
-  const USDCePrice = BigInt((2 * 10 ** 6).toString()) // 2 USDCe
+  const USDCPrice = BigInt((2 * 10 ** 6).toString()) // 2 USDCe
   const reserveToBuyMul = BigInt('4')
 
   const protocolBps = 400 // 4%
@@ -98,6 +98,13 @@ describe('DSponsorMarketplace', function () {
   }
 
   async function deployFixture() {
+    const { chainId: chainIdBigInt } = await provider.getNetwork()
+    chainId = chainIdBigInt.toString()
+
+    swapRouter = SWAP_ROUTER_ADDR[chainId]
+    WethAddr = WETH_ADDR[chainId]
+    USDCAddr = USDC_ADDR[chainId]
+
     signers = await ethers.getSigners()
     ;[deployer, owner, user, user2, user3, treasury] = signers
 
@@ -108,7 +115,7 @@ describe('DSponsorMarketplace', function () {
     user3Addr = await user3.getAddress()
     treasuryAddr = await treasury.getAddress()
 
-    USDCeContract = await ethers.getContractAt('ERC20', USDCeAddr)
+    USDCContract = await ethers.getContractAt('ERC20', USDCAddr)
     WethContract = await ethers.getContractAt('ERC20', WethAddr)
 
     forwarder = await ethers.deployContract('ERC2771Forwarder', [])
@@ -140,8 +147,8 @@ describe('DSponsorMarketplace', function () {
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 100, // 1%
-      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCeAddr, WethAddr],
-      prices: [ERC20Amount, valuePrice, USDCePrice, valuePrice],
+      currencies: [ERC20MockAddress, ZERO_ADDRESS, USDCAddr, WethAddr],
+      prices: [ERC20Amount, valuePrice, USDCPrice, valuePrice],
       allowedTokenIds: []
     }
 
@@ -233,8 +240,8 @@ describe('DSponsorMarketplace', function () {
       startTime,
       secondsUntilEndTime: BigInt('3600'),
       quantityToList: 1,
-      currencyToAccept: USDCeAddr,
-      reservePricePerToken: USDCePrice,
+      currencyToAccept: USDCAddr,
+      reservePricePerToken: USDCPrice,
       buyoutPricePerToken: USDCeTotalPrice,
       transferType: transferTypeSale,
       rentalExpirationTimestamp:
@@ -276,11 +283,10 @@ describe('DSponsorMarketplace', function () {
       buyFor: user2Addr,
       quantity: 1,
       currency: ERC20MockAddress,
-      totalPrice,
       referralAdditionalInformation
     }
 
-    const tx = DSponsorMarketplace.connect(user2).buy([buyParams])
+    const tx = DSponsorMarketplace.connect(user2).buy(buyParams)
 
     await expect(tx)
       .to.emit(DSponsorMarketplace, 'NewSale')
@@ -362,11 +368,10 @@ describe('DSponsorMarketplace', function () {
       buyFor: user2Addr,
       quantity: 1,
       currency: ERC20MockAddress,
-      totalPrice,
       referralAdditionalInformation
     }
 
-    const tx = DSponsorMarketplace.connect(user2).buy([buyParams])
+    const tx = DSponsorMarketplace.connect(user2).buy(buyParams)
 
     await expect(tx)
       .to.emit(DSponsorMarketplace, 'NewSale')
@@ -1122,12 +1127,12 @@ describe('DSponsorMarketplace', function () {
     it('Should update direct sale listing', async function () {
       await loadFixture(directListingRentFixture)
 
-      const startTime = BigInt('1711648320')
+      const startTime = (await now()) + BigInt('10')
       const updateParams: IDSponsorMarketplace.ListingUpdateParametersStruct = {
         quantityToList: 1,
         reservePricePerToken: ERC20Amount * BigInt('2'),
         buyoutPricePerToken: ERC20Amount * BigInt('3'),
-        currencyToAccept: USDCeAddr,
+        currencyToAccept: USDCAddr,
         startTime,
         secondsUntilEndTime: BigInt('3600'),
         rentalExpirationTimestamp: listingParams.rentalExpirationTimestamp
@@ -1152,44 +1157,29 @@ describe('DSponsorMarketplace', function () {
       await loadFixture(buyDirectListingSaleFixture)
     })
 
-    it('Should buy multiple tokens from direct listings - thanks to swaps', async function () {
+    it('Should buy token from direct listings - thanks to swap', async function () {
       const { WETHTotalPrice, USDCeTotalPrice } = await loadFixture(
         multipleDirectSalesFixture
       )
 
-      const value = parseEther('8')
-
       const balanceUser2 = await provider.getBalance(user2Addr)
 
-      const tx = await DSponsorMarketplace.connect(deployer).buy(
-        [
-          {
-            listingId: 1,
-            buyFor: user2Addr,
-            quantity: 1,
-            currency: WethAddr,
-            totalPrice: WETHTotalPrice,
-            referralAdditionalInformation
-          },
-          {
-            listingId: 0,
-            buyFor: user2Addr,
-            quantity: 1,
-            currency: USDCeAddr,
-            totalPrice: USDCeTotalPrice,
-            referralAdditionalInformation
-          }
-        ],
-        { value }
+      let tx = await DSponsorMarketplace.connect(deployer).buy(
+        {
+          listingId: 1,
+          buyFor: user2Addr,
+          quantity: 1,
+          currency: WethAddr,
+          referralAdditionalInformation
+        },
+        { value: WETHTotalPrice }
       )
 
       await expect(tx).to.changeTokenBalances(
         DSponsorNFT,
         [user2, user],
-        [2, -2]
+        [1, -1]
       )
-      expect(await DSponsorNFT.ownerOf(1)).to.equal(user2Addr)
-      expect(await DSponsorNFT.ownerOf(10)).to.equal(user2Addr)
 
       await expect(tx).to.changeTokenBalances(
         WethContract,
@@ -1197,72 +1187,76 @@ describe('DSponsorMarketplace', function () {
         [0, 0, ...computeFee(WETHTotalPrice), 0]
       )
 
+      const { amountInEthWithSlippage } = await getEthQuote(
+        USDCAddr,
+        USDCeTotalPrice.toString()
+      )
+
+      const value = amountInEthWithSlippage // 0.3% slippage
+
+      tx = await DSponsorMarketplace.connect(deployer).buy(
+        {
+          listingId: 0,
+          buyFor: user2Addr,
+          quantity: 1,
+          currency: USDCAddr,
+          referralAdditionalInformation
+        },
+        { value }
+      )
+
       await expect(tx).to.changeTokenBalances(
-        USDCeContract,
+        DSponsorNFT,
+        [user2, user],
+        [1, -1]
+      )
+
+      await expect(tx).to.changeTokenBalances(
+        USDCContract,
         [deployer, user2, user, owner, treasury, DSponsorMarketplace],
         [0, 0, ...computeFee(USDCeTotalPrice), 0]
       )
-
       await expect(tx).to.changeEtherBalances([deployer], [-value])
+
+      expect(await DSponsorNFT.ownerOf(1)).to.equal(user2Addr)
+      expect(await DSponsorNFT.ownerOf(10)).to.equal(user2Addr)
 
       // the final user get the refund
       expect(await provider.getBalance(user2Addr)).to.be.gt(balanceUser2)
     })
 
-    it('Should fail if not enough value to buy multiple tokens ', async function () {
+    it('Should fail if not enough value to buy token ', async function () {
       const { WETHTotalPrice, USDCeTotalPrice } = await loadFixture(
         multipleDirectSalesFixture
       )
 
-      const value = parseEther('1.0000000001')
+      const value = parseEther('0.00000000000099')
 
       await expect(
         DSponsorMarketplace.connect(deployer).buy(
-          [
-            {
-              listingId: 0,
-              buyFor: user2Addr,
-              quantity: 1,
-              currency: USDCeAddr,
-              totalPrice: USDCeTotalPrice,
-              referralAdditionalInformation
-            },
-            {
-              listingId: 1,
-              buyFor: user2Addr,
-              quantity: 1,
-              currency: WethAddr,
-              totalPrice: WETHTotalPrice,
-              referralAdditionalInformation
-            }
-          ],
-          { value }
-        )
-      ).to.be.revertedWithCustomError(DSponsorMarketplace, 'InsufficientFunds')
-
-      await expect(
-        DSponsorMarketplace.connect(deployer).buy(
-          [
-            {
-              listingId: 1,
-              buyFor: user2Addr,
-              quantity: 1,
-              currency: WethAddr,
-              totalPrice: WETHTotalPrice,
-              referralAdditionalInformation
-            },
-            {
-              listingId: 0,
-              buyFor: user2Addr,
-              quantity: 1,
-              currency: USDCeAddr,
-              totalPrice: USDCeTotalPrice,
-              referralAdditionalInformation
-            }
-          ],
+          {
+            listingId: 0,
+            buyFor: user2Addr,
+            quantity: 1,
+            currency: USDCAddr,
+            referralAdditionalInformation
+          },
           { value }
         )
       ).to.be.revertedWith('STF')
+
+      await expect(
+        DSponsorMarketplace.connect(deployer).buy(
+          {
+            listingId: 1,
+            buyFor: user2Addr,
+            quantity: 1,
+            currency: WethAddr,
+            referralAdditionalInformation
+          },
+          { value }
+        )
+      ).to.be.revertedWithCustomError(DSponsorMarketplace, 'InsufficientFunds')
     })
 
     it('Should rent a token from a direct listing', async function () {
@@ -1298,12 +1292,11 @@ describe('DSponsorMarketplace', function () {
         buyFor: user2Addr,
         quantity: 1,
         currency: ERC20MockAddress,
-        totalPrice,
         referralAdditionalInformation
       }
 
       await expect(
-        DSponsorMarketplace.connect(user2).buy([buyParams])
+        DSponsorMarketplace.connect(user2).buy(buyParams)
       ).to.be.revertedWithCustomError(
         DSponsorMarketplace,
         'ListingDoesNotExist'
