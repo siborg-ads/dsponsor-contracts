@@ -610,6 +610,6 @@ contract DSponsorNFT is
 
     function _setRoyalty(address receiver, uint96 feeBps) private {
         _setDefaultRoyalty(receiver, feeBps);
-        emit RoyalitiesSet(receiver, feeBps);
+        emit RoyaltySet(receiver, feeBps);
     }
 }
