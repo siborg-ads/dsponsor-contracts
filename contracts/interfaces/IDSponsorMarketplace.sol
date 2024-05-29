@@ -32,6 +32,7 @@ interface IDSponsorMarketplace {
 
     error AuctionAlreadyStarted();
     error AuctionStillActive();
+    error CannotBeZeroAddress();
     error InsufficientAllowanceOrBalance(address assetContract);
     error InvalidCurrency();
     error InvalidPricingParameters();
@@ -47,6 +48,7 @@ interface IDSponsorMarketplace {
     error OfferIsNotActive(uint256 offerId);
     error OutOfStock();
     error OutOfValidityPeriod();
+    error RefundExceedsBid();
     error SenderIsNotOfferor();
     error SenderIsNotTokenOwner();
     error ZeroQuantity();
@@ -337,9 +339,11 @@ interface IDSponsorMarketplace {
     /// @dev Emitted when a new bid is made in an auction.
     event NewBid(
         uint256 indexed listingId,
-        address indexed bidder,
         uint256 quantityWanted,
-        uint256 totalBidAmount,
+        address indexed newBidder,
+        uint256 newPricePerToken,
+        address previousBidder,
+        uint256 refundBonus,
         address currency
     );
 
@@ -416,15 +420,16 @@ interface IDSponsorMarketplace {
      *       bid to that listing.
      *
      *  @param _listingId        The unique ID of the listing to make an bid to.
-     *  @param _pricePerToken    The bid amount per token.
-     *                           The total bid amount is `listings[_listingId].quantity * _pricePerToken`.
+     *  @param _pricePerToken    The bid amount per token - includes fee for the previous bidder
+     *  @param _bidder           The account for whom the bid is made.
      *  @param _referralAdditionalInformation Additional information for facilitating transactions, such as business referrer IDs or tracking codes.
      */
     function bid(
         uint256 _listingId,
         uint256 _pricePerToken,
+        address _bidder,
         string memory _referralAdditionalInformation
-    ) external;
+    ) external payable;
 
     /**
      *  @notice Lets any account close an auction.

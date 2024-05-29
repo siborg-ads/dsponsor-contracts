@@ -34,8 +34,9 @@ While any ERC721-compliant contract can be used with the d>sponsor protocol, thi
 This contract manages secondary sales and includes:
 
 - Direct Listing, English Auctions, and Offer mechanisms.
+- When a new bid is placed, the previous bidder is refunded and get also 5% of its bid amount.
 - Options for sale or rent.
-- Payments in any ERC20 currency.
+- Any ERC20 currency, swap built in if paid with the native coin.
 - Royalties, fee and protocol rewards mechanisms.
 
 ## Deployment Addresses

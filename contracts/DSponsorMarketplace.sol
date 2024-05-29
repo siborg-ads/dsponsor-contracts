@@ -18,7 +18,7 @@ import "./lib/ProtocolFee.sol";
 /**
  * @title DSponsorMarketplace
  * @notice This contract is a marketplace for offers, direct and auction listings of NFTs with ERC20 tokens as currency.
- * A large part of the code is from Thirdweb's Marketplace implementation
+ * Implementation from Thirdweb Markeptlace & GBM auction (% of winning bid sent to previous bidder)
  */
 contract DSponsorMarketplace is
     IDSponsorMarketplace,
@@ -32,13 +32,16 @@ contract DSponsorMarketplace is
     //////////////////////////////////////////////////////////////*/
 
     /**
-     *  @dev The amount of time added to an auction's 'endTime', if a bid is made within `timeBuffer`
+     *  @dev The amount of time added to an auction's 'endTime', if a bid is made within `AUCTION_ENDTIME_BUFFER`
      *       seconds of the existing `endTime`.
      */
-    uint128 public constant timeBuffer = 15 minutes;
+    uint128 public constant AUCTION_ENDTIME_BUFFER = 15 minutes;
 
     /// @dev The minimum % increase required from the previous winning bid.
-    uint128 public constant bidBufferBps = 500; // 5%
+    uint64 public constant MIN_AUCTION_INCREASE_BPS = 1000; // 10%
+
+    /// @dev The % bonus refunded to the previous winning bidder on its bid amount.
+    uint64 public constant ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS = 500; // 5%
 
     /*///////////////////////////////////////////////////////////////
                             State variables
@@ -107,7 +110,12 @@ contract DSponsorMarketplace is
     )
         ERC2771ContextOwnable(forwarder, initialOwner)
         ProtocolFee(_swapRouter, _recipient, _bps)
-    {}
+    {
+        assert(
+            MIN_AUCTION_INCREASE_BPS > ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS
+        );
+        assert(MIN_AUCTION_INCREASE_BPS < 10000);
+    }
 
     /*///////////////////////////////////////////////////////////////
                         ERC 165 / 721 / 1155 logic
@@ -372,6 +380,10 @@ contract DSponsorMarketplace is
         uint256 sentValue = msg.value;
         address payer = _msgSender();
 
+        if (buyParams.buyFor == address(0)) {
+            revert CannotBeZeroAddress();
+        }
+
         uint256 totalPrice = listings[buyParams.listingId].buyoutPricePerToken *
             buyParams.quantity;
 
@@ -493,19 +505,22 @@ contract DSponsorMarketplace is
                     Auction listings sales logic
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Lets an account make a bid in an auction.
+    /// @dev Bid in an auction. Previous bidder is reimbursed with a % bonus.
     function bid(
         uint256 _listingId,
         uint256 _pricePerToken,
+        address _bidder,
         string memory _referralAdditionalInformation
-    ) external nonReentrant onlyExistingListing(_listingId) {
-        if (_pricePerToken == 0) {
-            revert InvalidPricingParameters();
+    ) external payable nonReentrant onlyExistingListing(_listingId) {
+        Listing memory targetListing = listings[_listingId];
+        Bid memory currentWinningBid = winningBid[_listingId];
+
+        // bidder cannot be 0 address
+        if (_bidder == address(0)) {
+            revert CannotBeZeroAddress();
         }
 
-        Listing memory targetListing = listings[_listingId];
-        address currency = targetListing.currency;
-
+        // cannot bid if the listing is not an auction
         if (targetListing.listingType != ListingType.Auction) {
             revert IsNotAuctionListing();
         }
@@ -518,78 +533,120 @@ contract DSponsorMarketplace is
             revert OutOfValidityPeriod();
         }
 
-        // A bid must be made for all auction items.
+        // checks on quantity
         uint256 quantity = _getSafeQuantity(
             targetListing.tokenType,
             targetListing.quantity
         );
-        uint256 incomingBidAmount = _pricePerToken * quantity;
+        if (quantity == 0) {
+            revert ZeroQuantity();
+        }
 
-        Bid memory currentWinningBid = winningBid[_listingId];
-        uint256 currentBidAmount = currentWinningBid.pricePerToken * quantity;
+        // check if incoming bid is higher than the current winning bid or reserve price
+        uint256 requiredMinimalPricePerToken = currentWinningBid
+            .pricePerToken == 0
+            ? targetListing.reservePricePerToken
+            : currentWinningBid.pricePerToken +
+                ((MIN_AUCTION_INCREASE_BPS * currentWinningBid.pricePerToken) /
+                    10000);
+        if (requiredMinimalPricePerToken > _pricePerToken) {
+            revert isNotWinningBid();
+        }
+
+        // Calculate refund amount to previous bidder
+        uint256 refundBonusPerToken = (ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS *
+            currentWinningBid.pricePerToken) / 10000;
+        uint256 refundAmountToPreviousBidder = quantity *
+            (currentWinningBid.pricePerToken + refundBonusPerToken);
+        if (refundAmountToPreviousBidder >= (_pricePerToken * quantity)) {
+            revert RefundExceedsBid();
+        }
+
+        // Collect incoming bid
+        if (msg.value > 0) {
+            // Swap native currency to ERC20 if value is sent
+            _swapNativeToERC20(
+                targetListing.currency,
+                _pricePerToken * quantity,
+                msg.value,
+                _bidder // refund to "spender" once swap done, and not _msgSender() as it can be the address of a delegating payment system
+            );
+        } else {
+            _pay(
+                _msgSender(),
+                address(this),
+                targetListing.currency,
+                _pricePerToken * quantity
+            );
+        }
+
+        _bid(
+            _listingId,
+            quantity,
+            _bidder,
+            _pricePerToken - refundBonusPerToken,
+            refundBonusPerToken,
+            refundAmountToPreviousBidder,
+            _referralAdditionalInformation
+        );
+    }
+
+    function _bid(
+        uint256 _listingId,
+        uint256 quantity,
+        address newBidder,
+        uint256 newPricePerToken,
+        uint256 refundBonusPerToken,
+        uint256 refundAmountToPreviousBidder,
+        string memory _referralAdditionalInformation
+    ) internal {
+        Listing memory targetListing = listings[_listingId];
+        address previousBidder = winningBid[_listingId].bidder;
 
         Bid memory newBid = Bid({
             listingId: _listingId,
-            bidder: _msgSender(),
-            pricePerToken: _pricePerToken,
+            bidder: newBidder,
+            pricePerToken: newPricePerToken,
             referralAdditionalInformation: _referralAdditionalInformation
         });
-
-        // Collect incoming bid
-        _pay(newBid.bidder, address(this), currency, incomingBidAmount);
 
         // Close auction and execute sale if there's a buyout price and incoming bid amount is buyout price.
         if (
             targetListing.buyoutPricePerToken > 0 &&
-            incomingBidAmount >= targetListing.buyoutPricePerToken * quantity
+            newPricePerToken >= targetListing.buyoutPricePerToken
         ) {
             _closeAuction(targetListing, newBid);
         } else {
-            /**
-             *      If there's an existing winning bid, incoming bid amount must be bid buffer % greater.
-             *      Else, bid amount must be at least as great as reserve price
-             */
-            uint256 _reserveAmount = targetListing.reservePricePerToken *
-                quantity;
-
-            bool isValidNewBid;
-            if (currentBidAmount == 0) {
-                isValidNewBid = incomingBidAmount >= _reserveAmount;
-            } else {
-                isValidNewBid = (incomingBidAmount > currentBidAmount &&
-                    ((incomingBidAmount - currentBidAmount) * MAX_BPS) /
-                        currentBidAmount >=
-                    bidBufferBps);
-            }
-            if (!isValidNewBid) {
-                revert isNotWinningBid();
-            }
-
             // Update the winning bid and listing's end time before external contract calls.
             winningBid[targetListing.listingId] = newBid;
 
-            if (targetListing.endTime - block.timestamp <= timeBuffer) {
-                targetListing.endTime += timeBuffer;
+            if (
+                targetListing.endTime - block.timestamp <=
+                AUCTION_ENDTIME_BUFFER
+            ) {
+                targetListing.endTime += AUCTION_ENDTIME_BUFFER;
                 listings[targetListing.listingId] = targetListing;
             }
         }
 
         // Payout previous highest bid.
-        if (currentWinningBid.bidder != address(0) && currentBidAmount > 0) {
+        if (refundAmountToPreviousBidder > 0) {
             _pay(
                 address(this),
-                currentWinningBid.bidder,
+                previousBidder,
                 targetListing.currency,
-                currentBidAmount
+                refundAmountToPreviousBidder
             );
         }
 
         emit NewBid(
             targetListing.listingId,
-            newBid.bidder,
             quantity,
-            incomingBidAmount,
-            currency
+            newBidder,
+            newPricePerToken,
+            previousBidder,
+            refundBonusPerToken * quantity,
+            targetListing.currency
         );
     }
 
