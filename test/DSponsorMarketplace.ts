@@ -74,7 +74,7 @@ describe('DSponsorMarketplace', function () {
 
   const ERC20Amount: bigint = parseEther('15')
   const valuePrice: bigint = parseEther('1')
-  const USDCPrice = BigInt((2 * 10 ** 6).toString()) // 2 USDCe
+  const USDCPrice = BigInt((2 * 10 ** 6).toString()) // 2 USDC
   const reserveToBuyMul = BigInt('4')
 
   const protocolBps = 400 // 4%
@@ -1834,6 +1834,251 @@ describe('DSponsorMarketplace', function () {
 
     it('Should bid on a token from an auction sale listing with a higher bid', async function () {
       await loadFixture(higherBidAuctionListingSaleFixture)
+    })
+
+    it('Should allow bids with swaps', async function () {
+      await loadFixture(deployFixture)
+
+      await DSponsorNFT.connect(user).approve(
+        DSponsorMarketplaceAddress,
+        tokenId
+      )
+
+      const startTime = (await now()) + BigInt('1') // 1 second in the future to anticipate the next block timestamp
+
+      const _reservePricePerToken = USDCPrice
+      const _buyoutPricePerToken = USDCPrice * reserveToBuyMul
+      const _quantity = '1'
+      listingParams = {
+        assetContract: DSponsorNFTAddress,
+        tokenId,
+        startTime,
+        secondsUntilEndTime: BigInt('3600'),
+        quantityToList: _quantity,
+        currencyToAccept: USDCContract,
+        reservePricePerToken: _reservePricePerToken,
+        buyoutPricePerToken: _buyoutPricePerToken,
+        transferType: transferTypeSale,
+        rentalExpirationTimestamp:
+          (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
+        listingType: listingTypeAuction
+      }
+
+      await DSponsorMarketplace.connect(user).createListing(listingParams)
+
+      const listingId = 0
+
+      const minimalAuctionBps =
+        await DSponsorMarketplace.MIN_AUCTION_INCREASE_BPS()
+      const bonusRefundBps =
+        await DSponsorMarketplace.ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS()
+
+      ///// BID 1 /////////////////////
+
+      const {
+        refundBonusAmount: refundBonusAmount1,
+        newPricePerToken: newPricePerToken1
+        // newAmount: newAmount1
+      } = computeBidAmounts(
+        _reservePricePerToken.toString(), //  newBidPerToken: string,
+        _quantity.toString(), // quantity: string,
+        _reservePricePerToken.toString(), // reservePricePerToken: string,
+        _buyoutPricePerToken.toString(), // buyoutPricePerToken: string,
+        '0', // previousPricePerToken: string | undefined,
+        minimalAuctionBps.toString(), // minimalAuctionBps: string,
+        bonusRefundBps.toString(), // bonusRefundBps: string,
+        royaltyBps.toString(), // royaltyBps: string,
+        protocolBps.toString() // protocolFeeBps: string
+      )
+
+      const { amountInEthWithSlippage: amountInEthWithSlippage1 } =
+        await getEthQuote(
+          USDCAddr,
+          _reservePricePerToken.toString()
+          // slippagePerCent: number = 0.3
+        )
+
+      const tx1 = await DSponsorMarketplace.connect(user2).bid(
+        listingId,
+        _reservePricePerToken,
+        user3Addr,
+        referralAdditionalInformation,
+        { value: amountInEthWithSlippage1 }
+      )
+
+      await expect(tx1)
+        .to.emit(DSponsorMarketplace, 'NewBid')
+        .withArgs(
+          listingId,
+          _quantity,
+          user3Addr,
+          newPricePerToken1,
+          ZERO_ADDRESS,
+          refundBonusAmount1,
+          USDCAddr
+        )
+
+      await expect(tx1).to.changeTokenBalances(
+        USDCContract,
+        [user3, user2, user, owner, treasury, DSponsorMarketplace],
+        [0, 0, 0, 0, 0, _reservePricePerToken]
+      )
+
+      await expect(tx1).to.changeEtherBalances(
+        [user2, DSponsorMarketplace],
+        [-amountInEthWithSlippage1, 0]
+      )
+
+      ///// BID 2 /////////////////////
+
+      const {
+        minimalBidPerToken: minimalBidPerToken2,
+        refundBonusAmount: refundBonusAmount2,
+        refundAmountToPreviousBidder: refundAmountToPreviousBidder2,
+        newPricePerToken: newPricePerToken2,
+        newAmount: newAmount2
+      } = computeBidAmounts(
+        getMinimalBidPerToken(
+          newPricePerToken1.toString(),
+          _reservePricePerToken.toString(),
+          minimalAuctionBps.toString()
+        ), //  newBidPerToken: string,
+        _quantity.toString(), // quantity: string,
+        _reservePricePerToken.toString(), // reservePricePerToken: string,
+        _buyoutPricePerToken.toString(), // buyoutPricePerToken: string,
+        newPricePerToken1.toString(), // previousPricePerToken: string | undefined,
+        minimalAuctionBps.toString(), // minimalAuctionBps: string,
+        bonusRefundBps.toString(), // bonusRefundBps: string,
+        royaltyBps.toString(), // royaltyBps: string,
+        protocolBps.toString() // protocolFeeBps: string
+      )
+
+      const { amountInEthWithSlippage: amountInEthWithSlippage2 } =
+        await getEthQuote(
+          USDCAddr,
+          minimalBidPerToken2.toString()
+          // slippagePerCent: number = 0.3
+        )
+
+      const tx2 = await DSponsorMarketplace.connect(user4).bid(
+        listingId,
+        minimalBidPerToken2,
+        user4Addr,
+        referralAdditionalInformation,
+        { value: amountInEthWithSlippage2 }
+      )
+
+      await expect(tx2)
+        .to.emit(DSponsorMarketplace, 'NewBid')
+        .withArgs(
+          listingId,
+          _quantity,
+          user4Addr,
+          newPricePerToken2,
+          user3Addr,
+          refundBonusAmount2,
+          USDCAddr
+        )
+
+      await expect(tx2).to.changeTokenBalances(
+        USDCContract,
+        [user4, user3, user2, user, owner, treasury, DSponsorMarketplace],
+        [
+          0,
+          refundAmountToPreviousBidder2,
+          0,
+          0,
+          0,
+          0,
+          BigInt(minimalBidPerToken2) - BigInt(refundAmountToPreviousBidder2)
+        ]
+      )
+
+      ///// BID FINAL /////////////////////
+
+      const {
+        minimalBidPerToken: minimalBidPerTokenFinal,
+        minimalBuyoutPerToken: finalBidPrice,
+
+        refundBonusAmount: refundBonusAmountFinal,
+        refundAmountToPreviousBidder: refundAmountToPreviousBidderFinal,
+
+        newPricePerToken: newPricePerTokenFinal,
+
+        protocolFeeAmount,
+        royaltyAmount,
+        listerAmount
+      } = computeBidAmounts(
+        getMinimalBuyoutPricePerToken(
+          newPricePerToken2,
+          _buyoutPricePerToken.toString(),
+          minimalAuctionBps.toString(),
+          bonusRefundBps.toString()
+        ), //  newBidPerToken: string,
+        _quantity.toString(), // quantity: string,
+        _reservePricePerToken.toString(), // reservePricePerToken: string,
+        _buyoutPricePerToken.toString(), // buyoutPricePerToken: string,
+        newPricePerToken2.toString(), // previousPricePerToken: string | undefined,
+        minimalAuctionBps.toString(), // minimalAuctionBps: string,
+        bonusRefundBps.toString(), // bonusRefundBps: string,
+        royaltyBps.toString(), // royaltyBps: string,
+        protocolBps.toString() // protocolFeeBps: string
+      )
+
+      const { amountInEthWithSlippage: amountInEthWithSlippage3 } =
+        await getEthQuote(
+          USDCAddr,
+          finalBidPrice.toString()
+          // slippagePerCent: number = 0.3
+        )
+
+      const finalTx = await DSponsorMarketplace.connect(user2).bid(
+        listingId,
+        finalBidPrice,
+        user3Addr,
+        referralAdditionalInformation,
+        { value: amountInEthWithSlippage3 }
+      )
+
+      await expect(finalTx)
+        .to.emit(DSponsorMarketplace, 'AuctionClosed')
+        .withArgs(listingId, user2Addr, false, userAddr, user3Addr)
+
+      await expect(finalTx)
+        .to.emit(DSponsorMarketplace, 'NewBid')
+        .withArgs(
+          listingId,
+          _quantity,
+          user3Addr,
+          newPricePerTokenFinal,
+          user4Addr,
+          refundBonusAmountFinal,
+          USDCAddr
+        )
+
+      await expect(finalTx).to.changeTokenBalances(
+        USDCContract,
+        [user4, user3, user2, user, owner, treasury, DSponsorMarketplace],
+        [
+          refundAmountToPreviousBidderFinal,
+          0,
+          0,
+          listerAmount,
+          royaltyAmount,
+          protocolFeeAmount,
+          -BigInt(newAmount2)
+        ]
+      )
+
+      await expect(finalTx).to.changeTokenBalances(
+        DSponsorNFT,
+        [user4, user3, user2, user, DSponsorMarketplaceAddress],
+        [0, 1, 0, 0, -1]
+      )
+
+      expect(await DSponsorNFT.ownerOf(tokenId)).to.equal(user3Addr)
+
+      expect(await ERC20Mock.balanceOf(DSponsorMarketplace)).to.equal(0)
     })
 
     it('Should allow to cancel if no bid', async function () {
