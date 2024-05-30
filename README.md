@@ -1,16 +1,16 @@
-# d>sponsor contracts
+# DSponsor contracts
 
-*d>sponsor* is a decentralized solution for sponsorship that provides funding in exchange for shares in visibility. It aligns the interests of both the sponsors and the sponsees.
+*DSponsor* is a decentralized solution for sponsorship that provides funding in exchange for shares in visibility. It aligns the interests of both the sponsors and the sponsees.
 
 This protocol allows anyone to create tokens for advertising spaces. These tokens can be purchased to acquire ad spaces on websites, apps, and more, for a specific time period, granting the exclusive right to place advertisements there.
 
-![logo d>sponsor](assets/schema%20dsponsor.png)
+![logo DSponsor](assets/schema%20dsponsor.png)
 
 ## Contracts Features
 
 ### DSponsorAdmin.sol
 
-This is the primary contract and serves as the gateway for frontends within the d>sponsor ecosystem. It is compatible with any ERC721 contract, providing token owners with the exclusive right to advertise. It is also compatible with ERC4907 to allow token *users* the exclusive right to advertise.
+This is the primary contract and serves as the gateway for frontends within the DSponsor ecosystem. It is compatible with any ERC721 contract, providing token owners with the exclusive right to advertise. It is also compatible with ERC4907 to allow token *users* the exclusive right to advertise.
 
 The contract offers functions for creating and managing sponsorship tokens and advertising proposals. It includes a system for collecting minting fees for the protocol's treasury and a referral program to reward contributions to these fees.
 
@@ -22,7 +22,7 @@ The contract offers functions for creating and managing sponsorship tokens and a
 
 ### DSponsorNFT.sol
 
-While any ERC721-compliant contract can be used with the d>sponsor protocol, this specific NFT contract incorporates various standards and unique functionalities.
+While any ERC721-compliant contract can be used with the DSponsor protocol, this specific NFT contract incorporates various standards and unique functionalities.
 
 - Allows pricing in ERC20 tokens and the native currency.
 - Includes rental capabilities (ERC4907).
@@ -41,15 +41,15 @@ This contract manages secondary sales and includes:
 
 ## Deployment Addresses
 
-### Sepolia Testnet (Chain ID = 11155111)
+### Base Sepolia Testnet (Chain ID = 84532)
 
-- `DSponsorAdmin`: [`0x6a768A9D9674D8e0D788b817eB38980b203A82DF`](https://sepolia.etherscan.io/address/0x6a768A9D9674D8e0D788b817eB38980b203A82DF)
+- `DSponsorAdmin`: [`0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D`](https://sepolia.basescan.org/address/0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D)
 
-- `DSponsorNFTFactory`: [`0x041f2E36c2fa7d09F5301C11a7F70bD3d01f7C84`](https://sepolia.etherscan.io/address/0x041f2E36c2fa7d09F5301C11a7F70bD3d01f7C84)
+- `DSponsorNFTFactory`: [`0x73adbA5994B48F5139730BE55622f298445179B0`](https://sepolia.basescan.org/address/0x73adbA5994B48F5139730BE55622f298445179B0)
 
-- Example of `DSponsorNFT` deployed: [`0x90F336ab07964eF674F0af6A0C5664971574CaE6`](https://sepolia.etherscan.io/address/0x90F336ab07964eF674F0af6A0C5664971574CaE6)
+- Example of `DSponsorNFT` deployed: [`0x90b692492B8be931392AeC358843b8b33675fAD2`](https://sepolia.basescan.org/address/0x90b692492B8be931392AeC358843b8b33675fAD2)
 
-- `DSponsorMarketplace`: [`0x83b4e1715e9296583f7109473E3D035386c04bb9`](https://sepolia.etherscan.io/address/0x83b4e1715e9296583f7109473E3D035386c04bb9)
+- `DSponsorMarketplace`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://sepolia.basescan.org/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
 
 ## Development
 

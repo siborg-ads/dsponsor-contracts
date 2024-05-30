@@ -105,7 +105,8 @@ describe('DSponsorMarketplace', function () {
   }
 
   async function deployFixture() {
-    const { chainId: chainIdBigInt } = await provider.getNetwork()
+    const network = await provider.getNetwork()
+    const { chainId: chainIdBigInt } = network
     chainId = chainIdBigInt.toString()
 
     swapRouter = SWAP_ROUTER_ADDR[chainId]

@@ -9,16 +9,23 @@ import type { NetworksUserConfig } from 'hardhat/types'
 
 const deploymentNetworks: NetworksUserConfig = {}
 
-if (process.env.SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
-  deploymentNetworks.sepolia = {
-    url: process.env.SEPOLIA_RPC_URL,
+if (process.env.BASE_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.base = {
+    url: process.env.BASE_RPC_URL,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 }
 
-if (process.env.ARBITRUM_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
-  deploymentNetworks.arbitrum = {
-    url: process.env.ARBITRUM_RPC_URL,
+if (process.env.BASE_SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.baseSepolia = {
+    url: process.env.BASE_SEPOLIA_RPC_URL,
+    accounts: [process.env.DEPLOYER_PRIVATE_KEY]
+  }
+}
+
+if (process.env.SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.sepolia = {
+    url: process.env.SEPOLIA_RPC_URL,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 }
@@ -41,10 +48,10 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.ARBITRUM_RPC_URL as string,
-        blockNumber: 207064843
+        url: process.env.BASE_RPC_URL as string,
+        blockNumber: 15141916
       },
-      chainId: 42161
+      chainId: 8453
     },
 
     ...deploymentNetworks
@@ -53,10 +60,20 @@ const config: HardhatUserConfig = {
   etherscan: {
     enabled: true,
     apiKey: {
-      arbitrum: process.env.ARBISCAN_API_KEY as string,
-      // sepolia: process.env.ARBISCAN_API_KEY as string
+      base: process.env.BASESCAN_API_KEY as string,
+      baseSepolia: process.env.BASESCAN_API_KEY as string,
       sepolia: process.env.ETHERSCAN_API_KEY as string
-    }
+    },
+    customChains: [
+      {
+        network: 'baseSepolia',
+        chainId: 84532,
+        urls: {
+          apiURL: 'https://api-sepolia.basescan.org/api',
+          browserURL: 'https://sepolia.basescan.org/'
+        }
+      }
+    ]
   },
 
   sourcify: {
