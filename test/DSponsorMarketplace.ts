@@ -1836,6 +1836,92 @@ describe('DSponsorMarketplace', function () {
       await loadFixture(higherBidAuctionListingSaleFixture)
     })
 
+    it('Should reject if refund exceeds incoming bid', async function () {
+      await loadFixture(deployFixture)
+
+      await DSponsorNFT.connect(user).approve(
+        DSponsorMarketplaceAddress,
+        tokenId
+      )
+
+      const startTime = (await now()) + BigInt('1') // 1 second in the future to anticipate the next block timestamp
+
+      const _reservePricePerToken = '4'
+      const _buyoutPricePerToken = '200'
+      const _quantity = '1'
+      listingParams = {
+        assetContract: DSponsorNFTAddress,
+        tokenId,
+        startTime,
+        secondsUntilEndTime: BigInt('3600'),
+        quantityToList: _quantity,
+        currencyToAccept: ERC20MockAddress,
+        reservePricePerToken: _reservePricePerToken,
+        buyoutPricePerToken: _buyoutPricePerToken,
+        transferType: transferTypeSale,
+        rentalExpirationTimestamp:
+          (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
+        listingType: listingTypeAuction
+      }
+
+      await DSponsorMarketplace.connect(user).createListing(listingParams)
+
+      const listingId = 0
+
+      const minimalAuctionBps =
+        await DSponsorMarketplace.MIN_AUCTION_INCREASE_BPS()
+      const bonusRefundBps =
+        await DSponsorMarketplace.ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS()
+
+      await ERC20Mock.connect(user2).approve(
+        DSponsorMarketplaceAddress,
+        _reservePricePerToken
+      )
+
+      await DSponsorMarketplace.connect(user2).bid(
+        listingId,
+        _reservePricePerToken,
+        user2Addr,
+        referralAdditionalInformation
+      )
+
+      const {
+        minimalBidPerToken: minimalBidPerToken1,
+        refundBonusAmount: refundBonusAmount1,
+        refundAmountToPreviousBidder: refundAmountToPreviousBidder1,
+        newPricePerToken: newPricePerToken1,
+        newAmount: newAmount1
+      } = computeBidAmounts(
+        getMinimalBidPerToken(
+          _reservePricePerToken.toString(),
+          _reservePricePerToken.toString(),
+          minimalAuctionBps.toString()
+        ), //  newBidPerToken: string,
+        _quantity.toString(), // quantity: string,
+        _reservePricePerToken.toString(), // reservePricePerToken: string,
+        _buyoutPricePerToken.toString(), // buyoutPricePerToken: string,
+        _reservePricePerToken, // previousPricePerToken: string | undefined,
+        minimalAuctionBps.toString(), // minimalAuctionBps: string,
+        bonusRefundBps.toString(), // bonusRefundBps: string,
+        royaltyBps.toString(), // royaltyBps: string,
+        protocolBps.toString() // protocolFeeBps: string
+      )
+
+      await ERC20Mock.connect(user3).approve(
+        DSponsorMarketplaceAddress,
+        minimalBidPerToken1
+      )
+
+      await expect(
+        DSponsorMarketplace.connect(user3).bid(
+          listingId,
+          minimalBidPerToken1,
+          user3Addr,
+          referralAdditionalInformation
+        )
+      ).to.be.revertedWithCustomError(DSponsorMarketplace, 'RefundExceedsBid')
+    })
+
     it('Should allow bids with swaps', async function () {
       await loadFixture(deployFixture)
 
@@ -2128,6 +2214,64 @@ describe('DSponsorMarketplace', function () {
 
     it('Should close an auction sale listing', async function () {
       await loadFixture(closingBidAuctionListingSaleFixture)
+    })
+
+    it('Should forbid bid for closed sale listing', async function () {
+      await loadFixture(closingBidAuctionListingSaleFixture)
+
+      const minimalAuctionBps =
+        await DSponsorMarketplace.MIN_AUCTION_INCREASE_BPS()
+      const bonusRefundBps =
+        await DSponsorMarketplace.ADDITIONNAL_REFUND_PREVIOUS_BIDDER_BPS()
+
+      const [
+        ,
+        _tokenOwner,
+        _assetContract,
+        _tokenId,
+        _startTime,
+        _endTime,
+        _quantity,
+        _currency,
+        _reservePricePerToken,
+        _buyoutPricePerToken
+      ] = await DSponsorMarketplace.listings(listingId)
+
+      const [__listingId, previousBidder, previousPricePerToken] =
+        await DSponsorMarketplace.winningBid(listingId)
+
+      const { minimalBidPerToken } = computeBidAmounts(
+        getMinimalBidPerToken(
+          previousPricePerToken.toString(),
+          _reservePricePerToken.toString(),
+          minimalAuctionBps.toString()
+        ), //  newBidPerToken: string,
+        _quantity.toString(), // quantity: string,
+        _reservePricePerToken.toString(), // reservePricePerToken: string,
+        _buyoutPricePerToken.toString(), // buyoutPricePerToken: string,
+        previousPricePerToken.toString(), // previousPricePerToken: string | undefined,
+        minimalAuctionBps.toString(), // minimalAuctionBps: string,
+        bonusRefundBps.toString(), // bonusRefundBps: string,
+        royaltyBps.toString(), // royaltyBps: string,
+        protocolBps.toString() // protocolFeeBps: string
+      )
+
+      await ERC20Mock.connect(user4).approve(
+        DSponsorMarketplaceAddress,
+        minimalBidPerToken
+      )
+
+      await expect(
+        DSponsorMarketplace.connect(user4).bid(
+          listingId,
+          minimalBidPerToken,
+          user2Addr,
+          referralAdditionalInformation
+        )
+      ).to.be.revertedWithCustomError(
+        DSponsorMarketplace,
+        'OutOfValidityPeriod'
+      )
     })
 
     it('Should rent a token from an auction listing', async function () {
