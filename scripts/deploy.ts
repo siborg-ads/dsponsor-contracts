@@ -157,6 +157,7 @@ async function deploySiBorgOffer() {
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
       listingType: LISTING_TYPE_AUCTION
     },
+
     {
       tokenData: 'bitcoin',
       startTime: await now(),
@@ -170,6 +171,7 @@ async function deploySiBorgOffer() {
         (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
       listingType: LISTING_TYPE_AUCTION
     },
+
     {
       tokenData: 'defi',
       startTime: await now(),
@@ -558,10 +560,16 @@ async function deploySiBorgOffer() {
     const tokenId = stringToUint256(tokenData)
 
     try {
-      await DSponsorNFT.mint(tokenId, deployerAddr, ZERO_ADDRESS, tokenData)
+      const txMint = await DSponsorNFT.mint(
+        tokenId,
+        deployerAddr,
+        ZERO_ADDRESS,
+        tokenData
+      )
+      await txMint.wait(2)
+
       console.log('Minted token', { tokenData, tokenId })
     } catch (e) {
-      console.log(e)
       console.log('Token already minted', { tokenData, tokenId })
     }
 
@@ -570,7 +578,7 @@ async function deploySiBorgOffer() {
       tokenId
     )
 
-    await txApprove.wait(1)
+    await txApprove.wait(2)
 
     await DSponsorMarketplace.createListing({
       assetContract: DSponsorNFTAddress,
@@ -591,30 +599,6 @@ async function deploySiBorgOffer() {
 }
 
 async function verifyContracts() {
-  /*
-  DSponsorNFTImplementationAddr = '0x55b01C3Bb0AE4FAb27cdb33D52b97604E1e4Ed63'
-  DSponsorNFTFactoryAddr = '0x73adbA5994B48F5139730BE55622f298445179B0'
-  DSponsorAdminAddr = '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D'
-
-  DSponsorAdminArgs = [
-    '0x73adbA5994B48F5139730BE55622f298445179B0',
-    '0xfD0CDD59a62dF27e464e462F489d6AF9869cCa44',
-    '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-    '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
-    '0xa45Ee60DAC370B0363920978a18DdB74D325C3B2',
-    400
-  ]
-  DSponsorMarketplaceAddr = '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09'
-
-  DSponsorMarketplaceArgs = [
-    '0xfD0CDD59a62dF27e464e462F489d6AF9869cCa44',
-    '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-    '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
-    '0xa45Ee60DAC370B0363920978a18DdB74D325C3B2',
-    400
-  ]
-  */
-
   await run('verify:verify', {
     address: DSponsorNFTImplementationAddr,
     constructorArguments: []
@@ -632,6 +616,35 @@ async function verifyContracts() {
     constructorArguments: DSponsorMarketplaceArgs
   })
 }
+
+/*
+deployerAddr = '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766'
+chainId = '11155111'
+DSponsorNFTImplementationAddr = '0xCdd6C9975566bdAeb6967853fB7fea87a815531B'
+DSponsorNFTFactoryAddr = '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd'
+DSponsorAdminAddr = '0x22554D70702C60A5fa30297908005B6cE19eEf51'
+
+DSponsorAdminArgs = [
+  '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd',
+  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  400
+]
+DSponsorMarketplaceAddr = '0xd36097D256F31F1BF5aa597dA7C3E098d466aD13'
+
+DSponsorMarketplaceArgs = [
+  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  400
+]
+
+offerId = 1
+DSponsorNFTAddress = '0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac'
+*/
 
 deployContracts()
   .then(() => deploySiBorgOffer())
@@ -664,4 +677,31 @@ Created offer {
   offerId: 1n,
   DSponsorNFTAddress: '0x90b692492B8be931392AeC358843b8b33675fAD2'
 }
+*/
+
+/*
+
+Deploying to sepolia (chainId: 11155111) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0xCdd6C9975566bdAeb6967853fB7fea87a815531B
+DSponsorNFTFactory deployed to: 0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd
+DSponsorAdmin deployed to: 0x22554D70702C60A5fa30297908005B6cE19eEf51  with args:  [
+  '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd',
+  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  400
+]
+DSponsorMarketplace deployed to: 0xd36097D256F31F1BF5aa597dA7C3E098d466aD13  with args:  [
+  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
+  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  400
+]
+Created offer {
+  offerId: 1n,
+  DSponsorNFTAddress: '0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac'
+}
+
 */
