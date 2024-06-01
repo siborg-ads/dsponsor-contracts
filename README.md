@@ -51,9 +51,9 @@ This contract manages secondary sales and includes:
 
 - `DSponsorMarketplace`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://sepolia.basescan.org/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
 
-### Base Sepolia Testnet (Chain ID = 11155111)
+### Sepolia Testnet (Chain ID = 11155111)
 
-- `DSponsorAdmin`: [`0x22554D70702C60A5fa30297908005B6cE19eEf51`](hhttps://sepolia.etherscan.io/address/0x22554D70702C60A5fa30297908005B6cE19eEf51)
+- `DSponsorAdmin`: [`0x22554D70702C60A5fa30297908005B6cE19eEf51`](https://sepolia.etherscan.io/address/0x22554D70702C60A5fa30297908005B6cE19eEf51)
 
 - `DSponsorNFTFactory`: [`0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd`](https://sepolia.etherscan.io/address/0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd)
 
