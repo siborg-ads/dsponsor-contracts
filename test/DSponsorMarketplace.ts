@@ -537,7 +537,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken,
         previousBidder,
         refundBonusAmount,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx).to.changeTokenBalances(
@@ -572,7 +573,7 @@ describe('DSponsorMarketplace', function () {
       ,
       ,
       ,
-      ,
+      _endTime,
       _quantity,
       _currency,
       _reservePricePerToken,
@@ -610,7 +611,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken,
         previousBidder,
         refundBonusAmount,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx).to.changeTokenBalances(
@@ -695,7 +697,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken1,
         previousBidder,
         refundBonusAmount1,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx1).to.changeTokenBalances(
@@ -766,7 +769,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken2,
         user3Addr,
         refundBonusAmount2,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx2).to.changeTokenBalances(
@@ -849,7 +853,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerTokenFinal,
         user4Addr,
         refundBonusAmountFinal,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(finalTx).to.changeTokenBalances(
@@ -1098,7 +1103,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken,
         previousBidder,
         refundBonusAmount,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx).to.changeTokenBalances(
@@ -1179,7 +1185,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken,
         previousBidder,
         refundBonusAmount,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx).to.changeTokenBalances(
@@ -1266,7 +1273,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerToken,
         previousBidder,
         refundBonusAmount,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(tx).to.changeTokenBalances(
@@ -1345,7 +1353,8 @@ describe('DSponsorMarketplace', function () {
         newPricePerTokenFinal,
         user4Addr,
         refundBonusAmountFinal,
-        _currency
+        _currency,
+        _endTime
       )
 
     await expect(finalTx).to.changeTokenBalances(
@@ -1936,6 +1945,7 @@ describe('DSponsorMarketplace', function () {
       const _reservePricePerToken = USDCPrice
       const _buyoutPricePerToken = USDCPrice * reserveToBuyMul
       const _quantity = '1'
+      const _endTime = startTime + BigInt('3600')
       listingParams = {
         assetContract: DSponsorNFTAddress,
         tokenId,
@@ -2002,7 +2012,8 @@ describe('DSponsorMarketplace', function () {
           newPricePerToken1,
           ZERO_ADDRESS,
           refundBonusAmount1,
-          USDCAddr
+          USDCAddr,
+          _endTime
         )
 
       await expect(tx1).to.changeTokenBalances(
@@ -2064,7 +2075,8 @@ describe('DSponsorMarketplace', function () {
           newPricePerToken2,
           user3Addr,
           refundBonusAmount2,
-          USDCAddr
+          USDCAddr,
+          _endTime
         )
 
       await expect(tx2).to.changeTokenBalances(
@@ -2140,7 +2152,8 @@ describe('DSponsorMarketplace', function () {
           newPricePerTokenFinal,
           user4Addr,
           refundBonusAmountFinal,
-          USDCAddr
+          USDCAddr,
+          _endTime
         )
 
       await expect(finalTx).to.changeTokenBalances(

@@ -610,6 +610,23 @@ contract DSponsorMarketplace is
             referralAdditionalInformation: _referralAdditionalInformation
         });
 
+        if (targetListing.endTime - block.timestamp <= AUCTION_ENDTIME_BUFFER) {
+            targetListing.endTime += AUCTION_ENDTIME_BUFFER;
+            listings[targetListing.listingId] = targetListing;
+        }
+
+        // @dev Emit NewBid event before close auction to be able to construct the subgraph correctly
+        emit NewBid(
+            targetListing.listingId,
+            quantity,
+            newBidder,
+            newPricePerToken,
+            previousBidder,
+            refundBonusPerToken * quantity,
+            targetListing.currency,
+            targetListing.endTime
+        );
+
         // Close auction and execute sale if there's a buyout price and incoming bid amount is buyout price.
         if (
             targetListing.buyoutPricePerToken > 0 &&
@@ -617,16 +634,7 @@ contract DSponsorMarketplace is
         ) {
             _closeAuction(targetListing, newBid);
         } else {
-            // Update the winning bid and listing's end time before external contract calls.
             winningBid[targetListing.listingId] = newBid;
-
-            if (
-                targetListing.endTime - block.timestamp <=
-                AUCTION_ENDTIME_BUFFER
-            ) {
-                targetListing.endTime += AUCTION_ENDTIME_BUFFER;
-                listings[targetListing.listingId] = targetListing;
-            }
         }
 
         // Payout previous highest bid.
@@ -638,16 +646,6 @@ contract DSponsorMarketplace is
                 refundAmountToPreviousBidder
             );
         }
-
-        emit NewBid(
-            targetListing.listingId,
-            quantity,
-            newBidder,
-            newPricePerToken,
-            previousBidder,
-            refundBonusPerToken * quantity,
-            targetListing.currency
-        );
     }
 
     /**

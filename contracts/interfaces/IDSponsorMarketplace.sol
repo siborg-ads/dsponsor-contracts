@@ -344,7 +344,8 @@ interface IDSponsorMarketplace {
         uint256 newPricePerToken,
         address previousBidder,
         uint256 refundBonus,
-        address currency
+        address currency,
+        uint256 newEndTime
     );
 
     /// @dev Emitted when an auction is closed.
