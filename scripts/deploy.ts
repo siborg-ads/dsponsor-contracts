@@ -133,8 +133,7 @@ async function deploySiBorgOffer() {
   // 'ipfs://bafkreigxslyror62hz3bgeae4zo6kzeildjf2xpjw5s7twye55ghrzhzpe'
 
   const offerMetadataURI =
-    'https://bafkreicmn6gia3cplyt7tu56sfue6cpw5dm2dnwuz2zkj4dhqrg5bzwuua.ipfs.nftstorage.link/'
-  // 'ipfs://bafkreicmn6gia3cplyt7tu56sfue6cpw5dm2dnwuz2zkj4dhqrg5bzwuua'
+    'https://bafkreibbpiazyln6hzc7yhv6ks5oskyvfbo7e5i6czllmp3fbjy52q7x3i.ipfs.nftstorage.link/'
 
   const adParameters: string[] = [
     'linkURL',

@@ -21,7 +21,7 @@ async function updateOffer() {
 
   const DSponsorAdmin = await ethers.getContractAt(
     'DSponsorAdmin',
-    '0xE442802706F3603d58F34418Eac50C78C7B4E8b3'
+    '0x22554D70702C60A5fa30297908005B6cE19eEf51'
   )
   const offerId = 1
 
@@ -30,14 +30,14 @@ async function updateOffer() {
   )
 
   await DSponsorAdmin.updateOffer(
-    1,
+    offerId,
     false,
     'Tokenized ad spaces in SiBorg App',
-    'https://bafkreicmn6gia3cplyt7tu56sfue6cpw5dm2dnwuz2zkj4dhqrg5bzwuua.ipfs.nftstorage.link/',
+    'https://bafkreibbpiazyln6hzc7yhv6ks5oskyvfbo7e5i6czllmp3fbjy52q7x3i.ipfs.nftstorage.link/',
     {
       admins: [],
       validators: [],
-      adParameters: ['linkURL', 'imageURL-6.4:1']
+      adParameters: []
     },
     {
       admins: [],

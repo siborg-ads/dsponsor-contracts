@@ -484,22 +484,9 @@ describe('DSponsorMarketplace', function () {
       await DSponsorMarketplace.winningBid(listingId)
 
     const {
-      errors,
-      minimalBidPerToken,
       minimalBuyoutPerToken: bidPrice,
-      newBidPerToken,
-      totalBidAmount,
-
-      refundBonusPerToken,
       refundBonusAmount,
-      refundAmountToPreviousBidder,
-
       newPricePerToken,
-      newAmount,
-
-      newRefundBonusPerToken,
-      newRefundBonusAmount,
-
       protocolFeeAmount,
       royaltyAmount,
       listerAmount
@@ -664,11 +651,14 @@ describe('DSponsorMarketplace', function () {
       bidPrice1
     )
 
+    const balanceUser3BeforeBid = await ERC20Mock.balanceOf(user3Addr)
+
     const {
       refundBonusAmount: refundBonusAmount1,
       refundAmountToPreviousBidder: refundAmountToPreviousBidder1,
-      newPricePerToken: newPricePerToken1
-      // newAmount: newAmount1
+      newPricePerToken: newPricePerToken1,
+      newRefundAmount: newRefundAmount1,
+      newProfitAmount: newProfitAmount1
     } = computeBidAmounts(
       bidPrice1.toString(), //  newBidPerToken: string,
       _quantity.toString(), // quantity: string,
@@ -726,12 +716,16 @@ describe('DSponsorMarketplace', function () {
 
     ///// BID 2 /////////////////////
 
+    const balanceUser4BeforeBid = await ERC20Mock.balanceOf(user4Addr)
+
     const {
       minimalBidPerToken: minimalBidPerToken2,
       refundBonusAmount: refundBonusAmount2,
       refundAmountToPreviousBidder: refundAmountToPreviousBidder2,
       newPricePerToken: newPricePerToken2,
-      newAmount: newAmount2
+      newAmount: newAmount2,
+      newRefundAmount: newRefundAmount2,
+      newProfitAmount: newProfitAmount2
     } = computeBidAmounts(
       getMinimalBidPerToken(
         newPricePerToken1.toString(),
@@ -772,6 +766,12 @@ describe('DSponsorMarketplace', function () {
         _currency,
         _endTime
       )
+
+    expect(refundAmountToPreviousBidder2).to.equal(newRefundAmount1)
+
+    const balanceUser3AfterBid = await ERC20Mock.balanceOf(user3Addr)
+    const profitUser3 = balanceUser3AfterBid - balanceUser3BeforeBid
+    expect(profitUser3).to.equal(BigInt(newProfitAmount1))
 
     await expect(tx2).to.changeTokenBalances(
       ERC20Mock,
@@ -856,6 +856,12 @@ describe('DSponsorMarketplace', function () {
         _currency,
         _endTime
       )
+
+    expect(refundAmountToPreviousBidderFinal).to.equal(newRefundAmount2)
+
+    const balanceUser4AfterBid = await ERC20Mock.balanceOf(user4Addr)
+    const profitUser4 = balanceUser4AfterBid - balanceUser4BeforeBid
+    expect(profitUser4).to.equal(BigInt(newProfitAmount2))
 
     await expect(finalTx).to.changeTokenBalances(
       ERC20Mock,

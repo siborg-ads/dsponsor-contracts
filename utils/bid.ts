@@ -68,6 +68,8 @@ export function computeBidAmounts(
 
   newRefundBonusPerToken: string
   newRefundBonusAmount: string
+  newRefundAmount: string
+  newProfitAmount: string
 
   protocolFeeAmount: string
   royaltyAmount: string
@@ -126,6 +128,9 @@ export function computeBidAmounts(
     (BigInt(bonusRefundBps) * newPricePerToken) / BigInt('10000')
   const newRefundBonusAmount = BigInt(quantity) * newRefundBonusPerToken
 
+  const newRefundAmount = newAmount + newRefundBonusAmount
+  const newProfitAmount = newRefundAmount - totalBidAmount
+
   const protocolFeeAmount =
     (BigInt(newAmount) * BigInt(protocolFeeBps)) / BigInt('10000')
   const royaltyAmount =
@@ -161,7 +166,9 @@ export function computeBidAmounts(
      * if another valid bid is placed...
      */
     newRefundBonusPerToken: newRefundBonusPerToken.toString(),
-    newRefundBonusAmount: newRefundBonusAmount.toString(), // bonus the bidder will get
+    newRefundBonusAmount: newRefundBonusAmount.toString(),
+    newRefundAmount: newRefundAmount.toString(), // how much the bidder will receive if he is outbid
+    newProfitAmount: newProfitAmount.toString(), // profit amount the bidder will receive if he is outbid
 
     /**
      * else if bid is successful (bidder will receive nft, no refund)
