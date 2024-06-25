@@ -126,14 +126,13 @@ async function deployContracts() {
 async function deploySiBorgOffer() {
   const defaultMintPriceUSDC = BigInt((30 * 10 ** 6).toString()) // 30 USDC
 
-  const name = 'Tokenized ad spaces in SiBorg App'
+  const name = 'SiBorg Ads'
 
   const contractURI =
-    'https://bafkreigxslyror62hz3bgeae4zo6kzeildjf2xpjw5s7twye55ghrzhzpe.ipfs.nftstorage.link/'
-  // 'ipfs://bafkreigxslyror62hz3bgeae4zo6kzeildjf2xpjw5s7twye55ghrzhzpe'
+    'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmaBBHP3Nc8DNN9GPQHQkLTVJhct61fLsGSEWkFch4zGiy'
 
   const offerMetadataURI =
-    'https://bafkreibbpiazyln6hzc7yhv6ks5oskyvfbo7e5i6czllmp3fbjy52q7x3i.ipfs.nftstorage.link/'
+    'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmbYWE9qVJhppZTVEGzWuKRUqJR395AUSdvBY8kGERF8ZW'
 
   const adParameters: string[] = [
     'linkURL',
@@ -144,335 +143,1210 @@ async function deploySiBorgOffer() {
 
   const specificTokens = [
     {
-      tokenData: 'swissborg',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      tokenData: 'Bitcoin',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.01'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
-
     {
-      tokenData: 'bitcoin',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      tokenData: 'XRP',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.01'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
-
     {
-      tokenData: 'defi',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      tokenData: 'Tether',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.0000004'),
-      buyoutPricePerToken: parseEther('0.0000004'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'staking',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((2.5 * 10 ** 6).toString()), // 2.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'bull run',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
-      quantityToList: 1,
-      currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.01'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'ethereum',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((12.5 * 10 ** 6).toString()), // 12.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'farcaster',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
-      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'btc',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
+      tokenData: 'BNB',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.02'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'socialfi',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((5.5 * 10 ** 6).toString()), // 5.5 USDC
-      buyoutPricePerToken: BigInt((5.5 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'halving',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      tokenData: 'Solana',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.015'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Stablecoin',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Depeg',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cryptocurrency',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Blockchain',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Web3',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Immutable',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'SwissBorg',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Bittensor',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Optimism',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Arbitrum',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Podcast',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Doland Tremp',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Borpa',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'ZK',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Layer',
+      startTime: 1719327600,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'NFT',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Decentralized',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Wallet',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Smart contract',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Ethereum',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'USDC',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Mining',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Dogecoin',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Toncoin',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cardano',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cryptography',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Sybil',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Fork',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Scalability',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Governance',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'ZRO',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'DePin',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: '1inch',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Aave',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'party',
+      startTime: 1719414000,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Token',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Altcoin',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
       tokenData: 'memecoin',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((12.5 * 10 ** 6).toString()), // 12.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'rwa',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.0000004'),
-      buyoutPricePerToken: parseEther('0.0000004'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'nft',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
-      quantityToList: 1,
-      currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.01'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'elon musk',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((12.5 * 10 ** 6).toString()), // 12.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'lens',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
-      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'degen',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('12'), // 12 days
+      tokenData: 'Exchange',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.02'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Digital Asset',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+
+    {
+      tokenData: 'Avalanche',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Shiba',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Tron',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Polkadot',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Near',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+
+    {
+      tokenData: 'Halving',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Whitepaper',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Yield Farming',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Staking',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'IPFS',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'news',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
       tokenData: 'airdrop',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 3).toString()), // in  3 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('5'), // 5 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((5.5 * 10 ** 6).toString()), // 5.5 USDC
-      buyoutPricePerToken: BigInt((5.5 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'ordinals',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('7'), // 7 days
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.015'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'sol',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((12.5 * 10 ** 6).toString()), // 12.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'web3',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      tokenData: 'season',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.0000004'),
-      buyoutPricePerToken: parseEther('0.0000004'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'pudgy',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'punks',
+      startTime: 1719500400,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'ICO',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Dapp',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'DAO',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Consensus',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Hash',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Polygon',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
       tokenData: 'alpha',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('31'), // 31 days
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.01'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'presale alpha',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((12.5 * 10 ** 6).toString()), // 12.5 USDC
-      buyoutPricePerToken: BigInt((10000 * 10 ** 6).toString()), // 10000 USDC
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
-    },
-    {
-      tokenData: 'crypto news',
-      startTime: await now(),
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('15'), // 15 days
-      quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((1 * 10 ** 6).toString()), // 1 USDC
-      buyoutPricePerToken: BigInt((1 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
-    },
-    {
-      tokenData: 'binance',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 7).toString()), // in  7 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
+      tokenData: 'Litecoin',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
       currencyToAccept: WETH_ADDR[chainId],
-      reservePricePerToken: parseEther('0.02'),
+      reservePricePerToken: parseEther('0.06'),
       buyoutPricePerToken: parseEther('100'),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_AUCTION
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     },
     {
-      tokenData: 'base',
-      startTime: (await now()) + BigInt(Number(3600 * 24 * 14).toString()), // in  14 days
-      secondsUntilEndTime: BigInt('3600') * BigInt('24') * BigInt('45'), // 45 days
+      tokenData: 'DAI',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
       quantityToList: 1,
-      currencyToAccept: USDC_ADDR[chainId],
-      reservePricePerToken: BigInt((0.005 * 10 ** 6).toString()), // 0.005 USDC
-      buyoutPricePerToken: BigInt((0.005 * 10 ** 6).toString()),
-      transferType: TRANSFER_TYPE_SALE,
-      rentalExpirationTimestamp:
-        (await now()) + BigInt(Number(3600 * 24 * 31).toString()), // 31 days
-      listingType: LISTING_TYPE_DIRECT
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Uniswap',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Oracle',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cross-chain',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Interoperability',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Ordinals',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'dogwifhat',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'rekt',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'SocialFi',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Symbiotic',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Restaking',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'GameFi',
+      startTime: 1719586800,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Proof of work',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Proof of stake',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Solidity',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Metaverse',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Gas',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Hedera',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Aptos',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Render',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cosmos',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'PEPE',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Cronos',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Mantle',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'The Graph',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Filecoin',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Stacks',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Bonk',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Borg',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Degen',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Bonsai',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
+    },
+    {
+      tokenData: 'Pointless',
+      startTime: 1719673200,
+      secondsUntilEndTime: 86400,
+      quantityToList: 1,
+      currencyToAccept: WETH_ADDR[chainId],
+      reservePricePerToken: parseEther('0.06'),
+      buyoutPricePerToken: parseEther('100'),
+      transferType: 1,
+      rentalExpirationTimestamp: 2678400,
+      listingType: 1
     }
   ]
 
-  const [deployer] = await ethers.getSigners()
+  // const [deployer] = await ethers.getSigners()
 
   const DSponsorAdmin = await ethers.getContractAt(
     'DSponsorAdmin',
@@ -495,7 +1369,7 @@ async function deploySiBorgOffer() {
     }
 
     const offerInit: IDSponsorAgreements.OfferInitParamsStruct = {
-      name: 'Tokenized ad spaces in SiBorg App',
+      name: 'SiBorg Ads',
       offerMetadata: offerMetadataURI,
       options: offerOptions
     }
@@ -510,8 +1384,8 @@ async function deploySiBorgOffer() {
       forwarder: FORWARDER_ADDR[chainId],
       initialOwner: deployerAddr,
       royaltyBps: 690, // 6.9%
-      currencies: [USDC_ADDR[chainId]],
-      prices: [defaultMintPriceUSDC],
+      currencies: [], // [USDC_ADDR[chainId]],
+      prices: [], // [defaultMintPriceUSDC],
       allowedTokenIds: []
     }
 
@@ -563,12 +1437,16 @@ async function deploySiBorgOffer() {
         tokenId,
         deployerAddr,
         ZERO_ADDRESS,
-        tokenData
+        tokenData,
+        {
+          gasLimit: '1000000' // 1M gas, hardhat set automatically a limit too low
+        }
       )
       await txMint.wait(2)
 
       console.log('Minted token', { tokenData, tokenId })
     } catch (e) {
+      console.log(e)
       console.log('Token already minted', { tokenData, tokenId })
     }
 
@@ -579,19 +1457,24 @@ async function deploySiBorgOffer() {
 
     await txApprove.wait(2)
 
-    await DSponsorMarketplace.createListing({
-      assetContract: DSponsorNFTAddress,
-      tokenId,
-      startTime,
-      secondsUntilEndTime,
-      quantityToList,
-      currencyToAccept,
-      reservePricePerToken,
-      buyoutPricePerToken,
-      transferType,
-      rentalExpirationTimestamp,
-      listingType
-    })
+    await DSponsorMarketplace.createListing(
+      {
+        assetContract: DSponsorNFTAddress,
+        tokenId,
+        startTime,
+        secondsUntilEndTime,
+        quantityToList,
+        currencyToAccept,
+        reservePricePerToken,
+        buyoutPricePerToken,
+        transferType,
+        rentalExpirationTimestamp,
+        listingType
+      },
+      {
+        gasLimit: '1000000' // 1M gas, hardhat set automatically a limit too low
+      }
+    )
 
     console.log('Created listing', { tokenData, tokenId })
   }
@@ -618,31 +1501,33 @@ async function verifyContracts() {
 
 /*
 deployerAddr = '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766'
-chainId = '11155111'
-DSponsorNFTImplementationAddr = '0xCdd6C9975566bdAeb6967853fB7fea87a815531B'
-DSponsorNFTFactoryAddr = '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd'
-DSponsorAdminAddr = '0x22554D70702C60A5fa30297908005B6cE19eEf51'
+chainId = '8453'
+DSponsorNFTImplementationAddr = '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D'
+DSponsorNFTFactoryAddr = '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09'
+DSponsorAdminAddr = '0xC6cCe35375883872826DdF3C30557F16Ec4DD94c'
 
 DSponsorAdminArgs = [
-  '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd',
-  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09',
+  '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  '0x2626664c2603336E57B271c5C0b26F421741e481',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
   400
 ]
-DSponsorMarketplaceAddr = '0xd36097D256F31F1BF5aa597dA7C3E098d466aD13'
+DSponsorMarketplaceAddr = '0x86aDf604B5B72d270654F3A0798cabeBC677C7fc'
 
 DSponsorMarketplaceArgs = [
-  '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
+  '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
-  '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
+  '0x2626664c2603336E57B271c5C0b26F421741e481',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
   400
 ]
 
 offerId = 1
-DSponsorNFTAddress = '0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac'
+DSponsorNFTAddress = '0x141feC749536067fe4b9291FB00a8a398023c7C9'
+
+verifyContracts()
 */
 
 deployContracts()
@@ -654,44 +1539,19 @@ deployContracts()
   })
 
 /* 
-Deploying to baseSepolia (chainId: 84532) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0x55b01C3Bb0AE4FAb27cdb33D52b97604E1e4Ed63
-DSponsorNFTFactory deployed to: 0x73adbA5994B48F5139730BE55622f298445179B0
-DSponsorAdmin deployed to: 0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D  with args:  [
-  '0x73adbA5994B48F5139730BE55622f298445179B0',
-  '0xfD0CDD59a62dF27e464e462F489d6AF9869cCa44',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
-  '0xa45Ee60DAC370B0363920978a18DdB74D325C3B2',
-  400
-]
-DSponsorMarketplace deployed to: 0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09  with args:  [
-  '0xfD0CDD59a62dF27e464e462F489d6AF9869cCa44',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
-  '0xa45Ee60DAC370B0363920978a18DdB74D325C3B2',
-  400
-]
-Created offer {
-  offerId: 1n,
-  DSponsorNFTAddress: '0x90b692492B8be931392AeC358843b8b33675fAD2'
-}
-*/
-
-/*
 
 Deploying to sepolia (chainId: 11155111) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0xCdd6C9975566bdAeb6967853fB7fea87a815531B
-DSponsorNFTFactory deployed to: 0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd
-DSponsorAdmin deployed to: 0x22554D70702C60A5fa30297908005B6cE19eEf51  with args:  [
-  '0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd',
+DSponsorNFTImplementation deployed to: 0x22A6b84e3213A5A7625aA595d01F0caed5E459C2
+DSponsorNFTFactory deployed to: 0x8Eb94523c3E01E172E1dd446Fecc8af74b6a2244
+DSponsorAdmin deployed to: 0x10E0447dDB66f1d33E6b10dB5099FBa231ceCE5C  with args:  [
+  '0x8Eb94523c3E01E172E1dd446Fecc8af74b6a2244',
   '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
   '0x6a0F850Cc341935Dd004a7C8C5aef3533ba284B9',
   400
 ]
-DSponsorMarketplace deployed to: 0xd36097D256F31F1BF5aa597dA7C3E098d466aD13  with args:  [
+DSponsorMarketplace deployed to: 0x0B7f100940f4152D01B42A626ab73f7A62dd7cdC  with args:  [
   '0xfD8EdB731BB66A8d46ef4A18B09607DD29FfcAFC',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E',
@@ -700,7 +1560,37 @@ DSponsorMarketplace deployed to: 0xd36097D256F31F1BF5aa597dA7C3E098d466aD13  wit
 ]
 Created offer {
   offerId: 1n,
-  DSponsorNFTAddress: '0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac'
+  DSponsorNFTAddress: '0xe1FDB9bF84368032e352c4A8050fA0a4d7b2D6AE'
 }
 
+----------------------------------------------------------------
+
+Deploying to base (chainId: 8453) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D
+DSponsorNFTFactory deployed to: 0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09
+DSponsorAdmin deployed to: 0xC6cCe35375883872826DdF3C30557F16Ec4DD94c  with args:  [
+  '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09',
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x2626664c2603336E57B271c5C0b26F421741e481',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
+DSponsorMarketplace deployed to: 0x86aDf604B5B72d270654F3A0798cabeBC677C7fc  with args:  [
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x2626664c2603336E57B271c5C0b26F421741e481',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
+Created offer {
+  offerId: 1n,
+  DSponsorNFTAddress: '0x141feC749536067fe4b9291FB00a8a398023c7C9'
+}
+
+
+
+// 64811535694367703682769931475725916177454416984783473390709242422588226989409 - tokenData farcaster
+// 90616754875103578559897293644305665530305783446554677063919912809091389674723 - tokenData lens
+// 21427090045381719823298842084323012234395108153199279809693771386125843395635 - tokenData runes
 */

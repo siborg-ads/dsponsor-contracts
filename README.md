@@ -41,25 +41,25 @@ This contract manages secondary sales and includes:
 
 ## Deployment Addresses
 
-### Base Sepolia Testnet (Chain ID = 84532)
+### Base Mainnet (Chain ID = 8453)
 
-- `DSponsorAdmin`: [`0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D`](https://sepolia.basescan.org/address/0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D)
+- `DSponsorAdmin`: [`0xC6cCe35375883872826DdF3C30557F16Ec4DD94c`](https://basescan.org/address/0xC6cCe35375883872826DdF3C30557F16Ec4DD94c)
 
-- `DSponsorNFTFactory`: [`0x73adbA5994B48F5139730BE55622f298445179B0`](https://sepolia.basescan.org/address/0x73adbA5994B48F5139730BE55622f298445179B0)
+- `DSponsorNFTFactory`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://basescan.org/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
 
-- Example of `DSponsorNFT` deployed: [`0x90b692492B8be931392AeC358843b8b33675fAD2`](https://sepolia.basescan.org/address/0x90b692492B8be931392AeC358843b8b33675fAD2)
+- Example of `DSponsorNFT` deployed: [`0x141feC749536067fe4b9291FB00a8a398023c7C9`](https://basescan.org/address/0x141feC749536067fe4b9291FB00a8a398023c7C9)
 
-- `DSponsorMarketplace`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://sepolia.basescan.org/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
+- `DSponsorMarketplace`: [`0x86aDf604B5B72d270654F3A0798cabeBC677C7fc`](https://basescan.org/address/0x86aDf604B5B72d270654F3A0798cabeBC677C7fc)
 
 ### Sepolia Testnet (Chain ID = 11155111)
 
-- `DSponsorAdmin`: [`0x22554D70702C60A5fa30297908005B6cE19eEf51`](https://sepolia.etherscan.io/address/0x22554D70702C60A5fa30297908005B6cE19eEf51)
+- `DSponsorAdmin`: [`0x10E0447dDB66f1d33E6b10dB5099FBa231ceCE5C`](https://sepolia.etherscan.io/address/0x10E0447dDB66f1d33E6b10dB5099FBa231ceCE5C)
 
-- `DSponsorNFTFactory`: [`0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd`](https://sepolia.etherscan.io/address/0x05B90b7CfbcEd967C20684b9bf2fAb196BDb1DBd)
+- `DSponsorNFTFactory`: [`0x8Eb94523c3E01E172E1dd446Fecc8af74b6a2244`](https://sepolia.etherscan.io/address/0x8Eb94523c3E01E172E1dd446Fecc8af74b6a2244)
 
-- Example of `DSponsorNFT` deployed: [`0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac`](https://sepolia.etherscan.io/address/0x51A533E5FBc542B0Df00c352D8A8A65Fff1727ac)
+- Example of `DSponsorNFT` deployed: [`0xe1FDB9bF84368032e352c4A8050fA0a4d7b2D6AE`](https://sepolia.etherscan.io/address/0xe1FDB9bF84368032e352c4A8050fA0a4d7b2D6AE)
 
-- `DSponsorMarketplace`: [`0xd36097D256F31F1BF5aa597dA7C3E098d466aD13`](https://sepolia.etherscan.io/address/0xd36097D256F31F1BF5aa597dA7C3E098d466aD13)
+- `DSponsorMarketplace`: [`0x0B7f100940f4152D01B42A626ab73f7A62dd7cdC`](https://sepolia.etherscan.io/address/0x0B7f100940f4152D01B42A626ab73f7A62dd7cdC)
 
 ## Development
 
@@ -107,5 +107,5 @@ slither . --checklist  > slither-analysis.md
 npm run deploy sepolia
 
 # deploy in mainnet
-npm run deploy arbitrum
+npm run deploy base
 ```
