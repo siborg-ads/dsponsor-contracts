@@ -30,6 +30,19 @@ if (process.env.SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
   }
 }
 
+if (process.env.DEPLOYER_PRIVATE_KEY) {
+  deploymentNetworks.modeMainnet = {
+    url: 'https://mainnet.mode.network',
+    chainId: 34443,
+    accounts: [process.env.DEPLOYER_PRIVATE_KEY]
+  }
+  deploymentNetworks.modeTestnet = {
+    url: 'https://sepolia.mode.network',
+    chainId: 919,
+    accounts: [process.env.DEPLOYER_PRIVATE_KEY]
+  }
+}
+
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.8.20',
@@ -47,11 +60,19 @@ const config: HardhatUserConfig = {
 
   networks: {
     hardhat: {
+      /*
       forking: {
         url: process.env.BASE_RPC_URL as string,
         blockNumber: 15141916
       },
       chainId: 8453
+      */
+
+      forking: {
+        url: 'https://mainnet.mode.network',
+        blockNumber: 12774977
+      },
+      chainId: 34443
     },
 
     ...deploymentNetworks

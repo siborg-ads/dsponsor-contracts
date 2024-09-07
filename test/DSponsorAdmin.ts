@@ -776,6 +776,7 @@ describe('DSponsorAdmin', function () {
         const fee = (USDCPrice * BigInt(bps.toString())) / BigInt('10000')
 
         const totalPrice = USDCPrice + fee
+
         const { amountInEth, amountInEthWithSlippage, amountUSDC } =
           await getEthQuote(USDCAddr, totalPrice.toString())
 

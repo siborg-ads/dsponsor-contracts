@@ -19,7 +19,7 @@ import { stringToUint256 } from '../utils/convert'
 
 const PROTOCOL_FEE_BPS = 400
 
-// if SiBorg offer already deployed
+// if offer already deployed
 let offerId: number
 let DSponsorNFTAddress: string
 

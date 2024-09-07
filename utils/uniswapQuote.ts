@@ -19,6 +19,9 @@ export const getEthQuote = async (
     Quoter,
     QUOTE_ADDR[chainId]
   )
+
+  const fee = chainId === '34443' ? 500 : 3000
+
   const [
     amountInEth,
     _sqrtPriceX96After,
@@ -27,7 +30,7 @@ export const getEthQuote = async (
   ] = await quoterContract.getFunction('quoteExactOutputSingle').staticCall({
     tokenIn: WETH_ADDR[chainId],
     tokenOut: tokenOutAddr,
-    fee: 3000,
+    fee,
     amount: amountOut,
     sqrtPriceLimitX96: 0
   })
@@ -37,7 +40,7 @@ export const getEthQuote = async (
     .staticCall({
       tokenIn: WETH_ADDR[chainId],
       tokenOut: USDC_ADDR[chainId],
-      fee: 3000,
+      fee,
       amountIn: amountInEth,
       sqrtPriceLimitX96: 0
     })

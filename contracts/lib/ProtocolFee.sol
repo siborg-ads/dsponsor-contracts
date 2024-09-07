@@ -215,12 +215,15 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
             amountOut = amount;
             WETH(weth).deposit{value: amountOut}();
         } else {
+            uint256 chainId = block.chainid;
+            uint24 fee = chainId == 34443 ? 500 : 3000;
+
             // perform the swap
             IV3SwapRouter.ExactOutputSingleParams memory params = IV3SwapRouter
                 .ExactOutputSingleParams({
                     tokenIn: weth,
                     tokenOut: currency,
-                    fee: 3000,
+                    fee: fee,
                     recipient: address(this),
                     amountOut: amount,
                     amountInMaximum: amountInMaximum,
