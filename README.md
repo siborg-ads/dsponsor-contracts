@@ -51,6 +51,16 @@ This contract manages secondary sales and includes:
 
 - `DSponsorMarketplace`: [`0x86aDf604B5B72d270654F3A0798cabeBC677C7fc`](https://basescan.org/address/0x86aDf604B5B72d270654F3A0798cabeBC677C7fc)
 
+### Mode Mainnet (Chain ID = 34443)
+
+- `DSponsorAdmin`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://explorer.mode.network/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
+
+- `DSponsorNFTFactory`: [`0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D`](https://explorer.mode.network/address/0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D)
+
+- Example of `DSponsorNFT` deployed: [`0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47`](https://explorer.mode.network/address/0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47)
+
+- `DSponsorMarketplace`: [`0xC6cCe35375883872826DdF3C30557F16Ec4DD94c`](https://explorer.mode.network/address/0xC6cCe35375883872826DdF3C30557F16Ec4DD94c)
+
 ### Sepolia Testnet (Chain ID = 11155111)
 
 - `DSponsorAdmin`: [`0x10E0447dDB66f1d33E6b10dB5099FBa231ceCE5C`](https://sepolia.etherscan.io/address/0x10E0447dDB66f1d33E6b10dB5099FBa231ceCE5C)
