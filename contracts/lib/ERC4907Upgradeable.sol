@@ -3,12 +3,12 @@ pragma solidity ^0.8.20;
 
 import "../interfaces/IERC4907.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
 abstract contract ERC4907Upgradeable is
     IERC4907,
     Initializable,
-    ERC721Upgradeable
+    ERC721EnumerableUpgradeable
 {
     struct UserInfo {
         address user; // user (tenant) address

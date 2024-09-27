@@ -30,9 +30,6 @@ contract DSponsorNFT is
     using Strings for uint256;
     using Strings for address;
 
-    // Counter for the number of tokens minted so far.
-    uint256 public totalSupply;
-
     // Maximum number of NFTs that can be minted, set at initialization and immutable thereafter.
     uint256 public MAX_SUPPLY;
 
@@ -521,6 +518,30 @@ contract DSponsorNFT is
         return super.supportsInterface(interfaceId);
     }
 
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    )
+        internal
+        virtual
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+        returns (address)
+    {
+        return ERC721EnumerableUpgradeable._update(to, tokenId, auth);
+    }
+
+    function _increaseBalance(
+        address account,
+        uint128 amount
+    )
+        internal
+        virtual
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+    {
+        return ERC721EnumerableUpgradeable._increaseBalance(account, amount);
+    }
+
     /* ****************
      *  INTERNAL FUNCTIONS
      *****************/
@@ -535,10 +556,9 @@ contract DSponsorNFT is
      * @dev This internal function extends ERC721's `_safeMint`, adding a supply cap check.
      */
     function _safeMint(uint256 tokenId, address to) internal {
-        if (MAX_SUPPLY < totalSupply + 1) {
+        if (MAX_SUPPLY < totalSupply() + 1) {
             revert MaxSupplyExceeded();
         }
-        totalSupply++;
         super._safeMint(to, tokenId);
     }
 

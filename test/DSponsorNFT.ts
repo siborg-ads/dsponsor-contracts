@@ -215,7 +215,7 @@ describe('DSponsorNFT', function () {
       expect(supportsERC20).to.equal(false)
       expect(supportsERC2981).to.equal(true)
       expect(supportsERC721).to.equal(true)
-      expect(supportsERC721Enumerable).to.equal(false)
+      expect(supportsERC721Enumerable).to.equal(true)
       expect(supportsERC721Metadata).to.equal(true)
       expect(supportsERC4907).to.equal(true)
     })

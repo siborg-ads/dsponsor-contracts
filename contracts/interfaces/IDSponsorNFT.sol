@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./IERC4907.sol";
-import "@openzeppelin/contracts/interfaces/IERC721.sol";
+import "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 interface IDSponsorNFTBase {
@@ -110,8 +110,6 @@ interface IDSponsorNFTBase {
 
     function contractURI() external view returns (string memory);
 
-    function totalSupply() external view returns (uint256);
-
     function mint(
         uint256 tokenId,
         address to,
@@ -164,4 +162,9 @@ interface IDSponsorNFTBase {
     ) external view returns (bool);
 }
 
-interface IDSponsorNFT is IDSponsorNFTBase, IERC721, IERC2981, IERC4907 {}
+interface IDSponsorNFT is
+    IDSponsorNFTBase,
+    IERC721Enumerable,
+    IERC2981,
+    IERC4907
+{}
