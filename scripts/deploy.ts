@@ -53,6 +53,41 @@ const now = async (): Promise<bigint> => {
   return BigInt(lastBlock.timestamp.toString())
 }
 
+async function deployMocks() {
+  const { name: networkName, chainId: chainIdBigInt } =
+    await provider.getNetwork()
+
+  chainId = chainIdBigInt.toString()
+
+  const [deployer] = await ethers.getSigners()
+  deployerAddr = await deployer.getAddress()
+  console.log(
+    `Deploying to ${networkName} (chainId: ${chainId}) with deployer: ${deployerAddr}`
+  )
+
+  const WETH = await ethers.deployContract('WETH', [])
+  const WETHAddr = await WETH.getAddress()
+  console.log('WETH deployed to:', WETHAddr)
+
+  const ERC20 = await ethers.deployContract('ERC20Mock', [])
+  const ERC20Addr = await ERC20.getAddress()
+  console.log('ERC20 deployed to:', ERC20Addr)
+
+  await run('verify:verify', {
+    address: WETHAddr,
+    constructorArguments: []
+  })
+
+  console.log('WETH verified')
+
+  await run('verify:verify', {
+    address: ERC20Addr,
+    constructorArguments: []
+  })
+
+  console.log('ERC20Mock verified')
+}
+
 async function deployContracts() {
   const { name: networkName, chainId: chainIdBigInt } =
     await provider.getNetwork()
@@ -121,6 +156,8 @@ async function deployContracts() {
     ' with args: ',
     DSponsorMarketplaceArgs
   )
+
+  await verifyContracts()
 }
 async function verifyContracts() {
   await run('verify:verify', {
@@ -1586,14 +1623,15 @@ async function deployOffer({
   }
 }
 
-async function deployModeOffer() {
-  const name = 'Mode Network Website Sponsorship (2024)'
-  const symbol = 'DSNFT-MODE'
+async function deployDemoOffer() {
+  const name = 'Demo Offer Sponsorship'
+  const symbol = 'DSNFT-DEMO'
   const maxSupply = 5
   const royaltyBps = 500 // 5%
   const adParameters: string[] = ['linkURL', 'imageURL-1:1']
-  const currencies = ['0xdfc7c877a950e49d2610114102175a06c2e3167a' /* MODE */]
-  const prices = [BigInt(1000) * BigInt(10) ** BigInt(18)] // 1000 MODE
+  const currencies = ['0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6']
+  // const prices = [BigInt(5) * BigInt(10) ** BigInt(18)] // 5
+  const prices = [BigInt('1000000000000000')] // 0.001
 
   const contractURI =
     'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ'
@@ -1617,7 +1655,7 @@ async function deployModeOffer() {
 
 /*
 deployContracts()
-  .then(() => deployModeOffer())
+  .then(() => deployDemoOffer())
   .then(() => verifyContracts())
   .catch((error) => {
     console.error(error)
@@ -1633,7 +1671,7 @@ DSponsorNFTImplementationAddr = '0x4d2AF3fF5Bfc5F90bB6eA66bDeF9D021cBB228b1'
 DSponsorNFTFactoryAddr = '0xF432fdd0666b90743DfF9754181c133DD41E851f'
 DSponsorAdminAddr = '0x279a53fff2b4b98F16Eb69908D8b81eB8DdcCD9C'
 
-deployModeOffer().catch((error) => {
+deployDemoOffer().catch((error) => {
   console.error(error)
   process.exitCode = 1
 })
@@ -1737,5 +1775,7 @@ DSponsorMarketplace deployed to: 0x807d79c4A9FA64F14aF16B3292dE371a32814f44  wit
   '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
   400
 ]
+
+ERC20 deployed to: 0xa70e901a190c5605a5137a1019c6514F5a626517
 
 */

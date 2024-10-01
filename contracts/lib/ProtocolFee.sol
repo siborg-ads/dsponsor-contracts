@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-interface WETH {
+interface IWETH {
     function deposit() external payable;
 
     function withdraw(uint256 wad) external;
@@ -213,7 +213,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                 revert InsufficientFunds();
             }
             amountOut = amount;
-            WETH(weth).deposit{value: amountOut}();
+            IWETH(weth).deposit{value: amountOut}();
         } else {
             uint256 chainId = block.chainid;
             uint24 fee = chainId == 34443 ? 500 : 3000;
