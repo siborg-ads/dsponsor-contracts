@@ -1591,7 +1591,7 @@ async function deployModeOffer() {
   const symbol = 'DSNFT-MODE'
   const maxSupply = 5
   const royaltyBps = 500 // 5%
-  const adParameters: string[] = ['linkURL', 'imageURL-16:9']
+  const adParameters: string[] = ['linkURL', 'imageURL-1:1']
   const currencies = ['0xdfc7c877a950e49d2610114102175a06c2e3167a' /* MODE */]
   const prices = [BigInt(1000) * BigInt(10) ** BigInt(18)] // 1000 MODE
 
@@ -1613,6 +1613,9 @@ async function deployModeOffer() {
   })
 }
 
+/////////// Full deployment ///////////////////////////////////
+
+/*
 deployContracts()
   .then(() => deployModeOffer())
   .then(() => verifyContracts())
@@ -1620,43 +1623,22 @@ deployContracts()
     console.error(error)
     process.exitCode = 1
   })
+*/
 
-/*
+/////////// Offer deployment only ///////////////////////////////////
 
 deployerAddr = '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766'
-chainId = '34443'
-DSponsorNFTImplementationAddr = '0x73adbA5994B48F5139730BE55622f298445179B0'
-DSponsorNFTFactoryAddr = '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D'
-DSponsorAdminAddr = '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09'
+chainId = '11124'
+DSponsorNFTImplementationAddr = '0x4d2AF3fF5Bfc5F90bB6eA66bDeF9D021cBB228b1'
+DSponsorNFTFactoryAddr = '0xF432fdd0666b90743DfF9754181c133DD41E851f'
+DSponsorAdminAddr = '0x279a53fff2b4b98F16Eb69908D8b81eB8DdcCD9C'
 
-DSponsorAdminArgs = [
-  '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D',
-  '0xD04F98C88cE1054c90022EE34d566B9237a1203C',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x016e131C05fb007b5ab286A6D614A5dab99BD415',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
-  400
-]
-DSponsorMarketplaceAddr = '0xC6cCe35375883872826DdF3C30557F16Ec4DD94c'
+deployModeOffer().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
 
-DSponsorMarketplaceArgs = [
-  '0xD04F98C88cE1054c90022EE34d566B9237a1203C',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x016e131C05fb007b5ab286A6D614A5dab99BD415',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
-  400
-]
-
-offerId = 1
-DSponsorNFTAddress = '0x141feC749536067fe4b9291FB00a8a398023c7C9'
-
-deployModeOffer()
-  .then(() => verifyContracts())
-  .catch((error) => {
-    console.error(error)
-    process.exitCode = 1
-  })
-*/
+/////////////////////////////////////////////////////////////////////
 
 /*
 
@@ -1735,5 +1717,25 @@ Created offer {
   DSponsorNFTAddress: '0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47'
 }
 
+----------------------------------------------
+
+Deploying to abstractTestnet (chainId: 11124) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0x4d2AF3fF5Bfc5F90bB6eA66bDeF9D021cBB228b1
+DSponsorNFTFactory deployed to: 0xF432fdd0666b90743DfF9754181c133DD41E851f
+DSponsorAdmin deployed to: 0x279a53fff2b4b98F16Eb69908D8b81eB8DdcCD9C  with args:  [
+  '0xF432fdd0666b90743DfF9754181c133DD41E851f',
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x0000000000000000000000000000000000000000',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
+DSponsorMarketplace deployed to: 0x807d79c4A9FA64F14aF16B3292dE371a32814f44  with args:  [
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x0000000000000000000000000000000000000000',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
 
 */

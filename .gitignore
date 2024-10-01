@@ -7,6 +7,6 @@ typechain-types
 
 #Hardhat files
 cache
+cache-zk
 artifacts
-
-local-pk.txt
+artifacts-zk

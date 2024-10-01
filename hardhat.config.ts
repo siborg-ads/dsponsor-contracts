@@ -7,18 +7,13 @@ import '@openzeppelin/hardhat-upgrades'
 import type { HardhatUserConfig } from 'hardhat/config'
 import type { NetworksUserConfig } from 'hardhat/types'
 
+import '@matterlabs/hardhat-zksync'
+
 const deploymentNetworks: NetworksUserConfig = {}
 
 if (process.env.BASE_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
   deploymentNetworks.base = {
     url: process.env.BASE_RPC_URL,
-    accounts: [process.env.DEPLOYER_PRIVATE_KEY]
-  }
-}
-
-if (process.env.BASE_SEPOLIA_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
-  deploymentNetworks.baseSepolia = {
-    url: process.env.BASE_SEPOLIA_RPC_URL,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 }
@@ -36,14 +31,27 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
     chainId: 34443,
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
-  deploymentNetworks.modeSepolia = {
-    url: 'https://sepolia.mode.network',
-    chainId: 919,
-    accounts: [process.env.DEPLOYER_PRIVATE_KEY]
+
+  deploymentNetworks.abstractTestnet = {
+    url: 'https://api.testnet.abs.xyz',
+    chainId: 11124,
+    accounts: [process.env.DEPLOYER_PRIVATE_KEY],
+    ethNetwork: 'sepolia',
+    zksync: true,
+    verifyURL:
+      'https://api-explorer-verify.testnet.abs.xyz/contract_verification'
   }
 }
 
 const config: HardhatUserConfig = {
+  zksolc: {
+    version: 'latest',
+    settings: {
+      // Note: This must be true to call NonceHolder & ContractDeployer system contracts
+      enableEraVMExtensions: false
+    }
+  },
+
   solidity: {
     version: '0.8.20',
     settings: {
@@ -66,13 +74,19 @@ const config: HardhatUserConfig = {
         blockNumber: 15141916
       },
       chainId: 8453
-      */
+     
 
       forking: {
         url: 'https://mainnet.mode.network',
         blockNumber: 12774977
       },
-      chainId: 34443
+      chainId: 34443,
+      */
+      forking: {
+        url: 'https://api.testnet.abs.xyz',
+        blockNumber: 426324
+      },
+      chainId: 11124
     },
 
     ...deploymentNetworks

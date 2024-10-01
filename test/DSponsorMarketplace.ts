@@ -127,7 +127,8 @@ describe('DSponsorMarketplace', function () {
     USDCContract = await ethers.getContractAt('ERC20', USDCAddr)
     WethContract = await ethers.getContractAt('ERC20', WethAddr)
 
-    forwarder = await ethers.deployContract('ERC2771Forwarder', [])
+    const forwarderFactory = await ethers.getContractFactory('ERC2771Forwarder')
+    forwarder = await forwarderFactory.deploy('ERC2771Forwarder')
     await forwarder.waitForDeployment()
     forwarderAddress = await forwarder.getAddress()
 
@@ -2456,7 +2457,9 @@ describe('DSponsorMarketplace', function () {
           listingParams
         ])
 
-      const forwarder2 = await ethers.deployContract('ERC2771Forwarder', [])
+      const forwarderFactory2 =
+        await ethers.getContractFactory('ERC2771Forwarder')
+      const forwarder2 = await forwarderFactory2.deploy('ERC2771Forwarder')
       await forwarder2.waitForDeployment()
       await DSponsorMarketplace.connect(deployer).setTrustedForwarder(
         await forwarder2.getAddress()
