@@ -38,7 +38,15 @@ contract DSponsorNFTFactory is IDSponsorNFTFactory {
     function createDSponsorNFT(
         DSponsorNFT.InitParams memory params
     ) external returns (address instance) {
-        instance = Clones.clone(nftImplementation);
+        uint256 chainId = block.chainid;
+
+        // abstract-testnet is like zkSync, Clone is not supported
+        if (chainId == 11124) {
+            DSponsorNFT DSponsorNFTContract = new DSponsorNFT();
+            instance = address(DSponsorNFTContract);
+        } else {
+            instance = Clones.clone(nftImplementation);
+        }
         DSponsorNFT(instance).initialize(params);
 
         emit NewDSponsorNFT(

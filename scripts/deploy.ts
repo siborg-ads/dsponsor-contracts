@@ -1594,8 +1594,7 @@ async function deployOffer({
       options: offerOptions
     }
 
-    /*
-     // create nft contract and then offer
+    // create nft contract and then offer
     const initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct = {
       name,
       symbol,
@@ -1615,14 +1614,20 @@ async function deployOffer({
       initDSponsorNFTParams,
       offerInit,
       {
-        gasLimit: '1000000' // 1M gas, hardhat set automatically a limit too low
+        gasLimit: '60000000' // 60M gas, hardhat set automatically a limit too low
       }
     )
-    */
 
     // alternative : create offer from nft contract
-    DSponsorNFTAddress = '0xe3aCb7d6F6878a72479c9645489e9D531B789528'
+    /*
+    const DSponsorNFT = await ethers.deployContract('DSponsorNFT', [])
+    await DSponsorNFT.initialize(initDSponsorNFTParams)
+    DSponsorNFTAddress = await DSponsorNFT.getAddress()
+
+    console.log('DSponsorNFT deployed to:', DSponsorNFTAddress)
+
     const tx = await DSponsorAdmin.createOffer(DSponsorNFTAddress, offerInit)
+*/
 
     await tx.wait(6)
 
@@ -1683,20 +1688,20 @@ deployContracts()
 /////////// Offer deployment only ///////////////////////////////////
 
 /*
+
 deployerAddr = '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766'
 chainId = '11124'
-DSponsorNFTImplementationAddr = '0x4d2AF3fF5Bfc5F90bB6eA66bDeF9D021cBB228b1'
-DSponsorNFTFactoryAddr = '0xF432fdd0666b90743DfF9754181c133DD41E851f'
-DSponsorAdminAddr = '0x279a53fff2b4b98F16Eb69908D8b81eB8DdcCD9C'
-DSponsorMarketplaceAddr = '0x807d79c4A9FA64F14aF16B3292dE371a32814f44'
-
+DSponsorNFTImplementationAddr = '0xBf8Aa5ECe57D07dd700d3A952eb803C9CC8A0Cdb'
+DSponsorNFTFactoryAddr = '0xAe24518ffC7D699F3328a5eE3666cc5175bE2149'
+DSponsorAdminAddr = '0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571'
+DSponsorMarketplaceAddr = '0x747aCdC82A90cca57587F20Ee1041088F53c3b15'
 
 deployDemoOffer().catch((error) => {
   console.error(error)
   process.exitCode = 1
 })
-*/
 
+*/
 /////////////  Results  //////////////////////////////////////////
 
 /*
@@ -1779,23 +1784,24 @@ Created offer {
 ----------------------------------------------
 
 Deploying to unknown (chainId: 11124) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0x48DD9f5Bb8d670b0BdA8974E73A0877F8DE5f3c0
-DSponsorNFTFactory deployed to: 0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f
-DSponsorAdmin deployed to: 0x873eb8d6E65982ea1793BC1eA302ECDDe5874237  with args:  [
-  '0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f',
+DSponsorNFTImplementation deployed to: 0xBf8Aa5ECe57D07dd700d3A952eb803C9CC8A0Cdb
+DSponsorNFTFactory deployed to: 0xAe24518ffC7D699F3328a5eE3666cc5175bE2149
+DSponsorAdmin deployed to: 0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571  with args:  [
+  '0xAe24518ffC7D699F3328a5eE3666cc5175bE2149',
   '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
   '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
   400
 ]
-DSponsorMarketplace deployed to: 0x3e056f3512a7BE4234d02Fd8ED74c1682D525639  with args:  [
+DSponsorMarketplace deployed to: 0x747aCdC82A90cca57587F20Ee1041088F53c3b15  with args:  [
   '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
   '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
   400
 ]
+
 
 WETH: 0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6
 ERC20Mock: 0xa70e901a190c5605a5137a1019c6514F5a626517
@@ -1804,6 +1810,5 @@ UniswapV3Mock: 0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c
 
 ["Demo Offer Sponsorship","DSNFT-DEMO","https://relayer.dsponsor.com/api/11124/tokenMetadata","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ",5,"0x9a7FAC267228f536A8f250E65d7C4CA7d39De766","0x0000000000000000000000000000000000000000","0x9a7FAC267228f536A8f250E65d7C4CA7d39De766",500,["0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6"],[1000000000000000],[0,1,2,3,4]
 ["Demo Offer Sponsorship","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmW1QmyXzMEwPyw1x4p2oniHmb1nG9tdPq5sNaJg24ZRtA",[["0x9a7FAC267228f536A8f250E65d7C4CA7d39De766"],[],["linkURL","imageURL-1:1"]]
-
 
 */

@@ -73,13 +73,13 @@ This contract manages secondary sales and includes:
 
 ### Abstract Testnet (Chain ID = 11124)
 
-- `DSponsorAdmin`: [`0x873eb8d6E65982ea1793BC1eA302ECDDe5874237`](https://explorer.testnet.abs.xyz/address/0x873eb8d6E65982ea1793BC1eA302ECDDe5874237)
+- `DSponsorAdmin`: [`0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571`](https://explorer.testnet.abs.xyz/address/0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571)
 
-- `DSponsorNFTFactory`: [`0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f`](https://explorer.testnet.abs.xyz/address/0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f)
+- `DSponsorNFTFactory`: [`0xAe24518ffC7D699F3328a5eE3666cc5175bE2149`](https://explorer.testnet.abs.xyz/address/0xAe24518ffC7D699F3328a5eE3666cc5175bE2149)
 
-- Example of `ERC721Mock` deployed: [`0xe3aCb7d6F6878a72479c9645489e9D531B789528`](https://explorer.testnet.abs.xyz/address/0xe3aCb7d6F6878a72479c9645489e9D531B789528)
+- Example of `DSponsorNFT` deployed: [`0x651212D1B779fC0d0a5d4Fd966D0C97C3F021E98`](https://explorer.testnet.abs.xyz/address/0x651212D1B779fC0d0a5d4Fd966D0C97C3F021E98)
 
-- `DSponsorMarketplace`: [`0x3e056f3512a7BE4234d02Fd8ED74c1682D525639`](https://explorer.testnet.abs.xyz/address/0x3e056f3512a7BE4234d02Fd8ED74c1682D525639)
+- `DSponsorMarketplace`: [`0x747aCdC82A90cca57587F20Ee1041088F53c3b15`](https://explorer.testnet.abs.xyz/address/0x747aCdC82A90cca57587F20Ee1041088F53c3b15)
 
 ## Development
 

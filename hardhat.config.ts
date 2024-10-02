@@ -84,7 +84,7 @@ const config: HardhatUserConfig = {
       */
       forking: {
         url: 'https://api.testnet.abs.xyz',
-        blockNumber: 431315
+        blockNumber: 421315
       },
       chainId: 11124
     },
