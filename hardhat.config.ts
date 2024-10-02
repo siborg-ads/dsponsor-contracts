@@ -74,8 +74,8 @@ const config: HardhatUserConfig = {
         blockNumber: 15141916
       },
       chainId: 8453
-     
 
+      
       forking: {
         url: 'https://mainnet.mode.network',
         blockNumber: 12774977
@@ -84,7 +84,7 @@ const config: HardhatUserConfig = {
       */
       forking: {
         url: 'https://api.testnet.abs.xyz',
-        blockNumber: 426324
+        blockNumber: 431315
       },
       chainId: 11124
     },

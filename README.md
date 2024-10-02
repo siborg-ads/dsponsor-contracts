@@ -71,6 +71,16 @@ This contract manages secondary sales and includes:
 
 - `DSponsorMarketplace`: [`0x0B7f100940f4152D01B42A626ab73f7A62dd7cdC`](https://sepolia.etherscan.io/address/0x0B7f100940f4152D01B42A626ab73f7A62dd7cdC)
 
+### Abstract Testnet (Chain ID = 11124)
+
+- `DSponsorAdmin`: [`0x873eb8d6E65982ea1793BC1eA302ECDDe5874237`](https://explorer.testnet.abs.xyz/address/0x873eb8d6E65982ea1793BC1eA302ECDDe5874237)
+
+- `DSponsorNFTFactory`: [`0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f`](https://explorer.testnet.abs.xyz/address/0xc0ef8D43660cEe1461fA41aab486368bf0bc2D3f)
+
+- Example of `ERC721Mock` deployed: [`0xe3aCb7d6F6878a72479c9645489e9D531B789528`](https://explorer.testnet.abs.xyz/address/0xe3aCb7d6F6878a72479c9645489e9D531B789528)
+
+- `DSponsorMarketplace`: [`0x3e056f3512a7BE4234d02Fd8ED74c1682D525639`](https://explorer.testnet.abs.xyz/address/0x3e056f3512a7BE4234d02Fd8ED74c1682D525639)
+
 ## Development
 
 ### Setting Up the Environment

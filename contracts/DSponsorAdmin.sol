@@ -38,7 +38,7 @@ contract DSponsorAdmin is DSponsorAgreements, ProtocolFee {
         IDSponsorNFTFactory _nftFactory,
         address forwarder,
         address initialOwner,
-        UniV3SwapRouter _swapRouter,
+        IUniV3SwapRouter _swapRouter,
         address payable _recipient,
         uint96 _bps
     )

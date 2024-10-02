@@ -15,11 +15,11 @@ import {
   DSponsorNFTFactory,
   ERC20Mock,
   ERC721Mock,
-  ReentrantDSponsorNFT
+  ReentrantDSponsorNFT,
+  ERC2771Forwarder
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 
-import { ERC2771Forwarder } from '../typechain-types/@openzeppelin/contracts/metatx/ERC2771Forwarder'
 import { ZERO_ADDRESS } from '../utils/constants'
 
 describe('DSponsorNFT', function () {
