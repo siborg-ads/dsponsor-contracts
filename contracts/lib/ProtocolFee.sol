@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "../interfaces/IProtocolFee.sol";
+import "../interfaces/IUniV3SwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -9,14 +10,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-interface WETH {
+interface IWETH {
     function deposit() external payable;
 
     function withdraw(uint256 wad) external;
-}
-
-interface UniV3SwapRouter is IV3SwapRouter, IPeripheryPayments {
-    function WETH9() external view returns (address);
 }
 
 /**
@@ -33,7 +30,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
     /// @dev The max bps of the contract. So, 10_000 == 100 %
     uint64 public constant MAX_BPS = 10_000;
 
-    UniV3SwapRouter public immutable swapRouter;
+    IUniV3SwapRouter public immutable swapRouter;
     uint96 public feeBps;
     address payable public feeRecipient;
 
@@ -44,7 +41,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
      * @param _bps The initial protocol fee in basis points (400 for 4%)
      */
     constructor(
-        UniV3SwapRouter _swapRouter,
+        IUniV3SwapRouter _swapRouter,
         address payable _recipient,
         uint96 _bps
     ) {
@@ -213,7 +210,7 @@ abstract contract ProtocolFee is IProtocolFee, Context, ReentrancyGuard {
                 revert InsufficientFunds();
             }
             amountOut = amount;
-            WETH(weth).deposit{value: amountOut}();
+            IWETH(weth).deposit{value: amountOut}();
         } else {
             uint256 chainId = block.chainid;
             uint24 fee = chainId == 34443 ? 500 : 3000;

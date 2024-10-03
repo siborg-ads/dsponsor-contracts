@@ -53,6 +53,57 @@ const now = async (): Promise<bigint> => {
   return BigInt(lastBlock.timestamp.toString())
 }
 
+async function deployMocks() {
+  const { name: networkName, chainId: chainIdBigInt } =
+    await provider.getNetwork()
+
+  chainId = chainIdBigInt.toString()
+
+  const [deployer] = await ethers.getSigners()
+  deployerAddr = await deployer.getAddress()
+  console.log(
+    `Deploying MOCKS to ${networkName} (chainId: ${chainId}) with deployer: ${deployerAddr}`
+  )
+
+  const WETH = await ethers.deployContract('WETH', [])
+  const WETHAddr = await WETH.getAddress()
+  console.log('WETH deployed to:', WETHAddr)
+
+  const ERC20 = await ethers.deployContract('ERC20Mock', [])
+  const ERC20Addr = await ERC20.getAddress()
+  console.log('ERC20 deployed to:', ERC20Addr)
+
+  const ERC721 = await ethers.deployContract('ERC721Mock', [])
+  const ERC721Addr = await ERC721.getAddress()
+  console.log('ERC721 deployed to:', ERC721Addr)
+
+  const UNIV3 = await ethers.deployContract('UniV3SwapRouterMock', [WETHAddr])
+  const UNIV3Addr = await UNIV3.getAddress()
+  console.log('UniswapV3 deployed to:', UNIV3Addr)
+
+  await run('verify:verify', {
+    address: WETHAddr,
+    constructorArguments: []
+  })
+
+  await run('verify:verify', {
+    address: ERC20Addr,
+    constructorArguments: []
+  })
+
+  await run('verify:verify', {
+    address: ERC721Addr,
+    constructorArguments: []
+  })
+
+  await run('verify:verify', {
+    address: UNIV3Addr,
+    constructorArguments: [WETHAddr]
+  })
+
+  console.log('Mock contracts verified')
+}
+
 async function deployContracts() {
   const { name: networkName, chainId: chainIdBigInt } =
     await provider.getNetwork()
@@ -121,6 +172,8 @@ async function deployContracts() {
     ' with args: ',
     DSponsorMarketplaceArgs
   )
+
+  await verifyContracts()
 }
 async function verifyContracts() {
   await run('verify:verify', {
@@ -1527,10 +1580,6 @@ async function deployOffer({
     'DSponsorNFTFactory',
     DSponsorNFTFactoryAddr
   )
-  const DSponsorMarketplace = await ethers.getContractAt(
-    'DSponsorMarketplace',
-    DSponsorMarketplaceAddr
-  )
 
   if (!offerId && !DSponsorNFTAddress) {
     const offerOptions: IDSponsorAgreements.OfferOptionsStruct = {
@@ -1545,6 +1594,7 @@ async function deployOffer({
       options: offerOptions
     }
 
+    // create nft contract and then offer
     const initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct = {
       name,
       symbol,
@@ -1564,9 +1614,21 @@ async function deployOffer({
       initDSponsorNFTParams,
       offerInit,
       {
-        gasLimit: '1000000' // 1M gas, hardhat set automatically a limit too low
+        gasLimit: '60000000' // 60M gas, hardhat set automatically a limit too low
       }
     )
+
+    // alternative : create offer from nft contract
+    /*
+    const DSponsorNFT = await ethers.deployContract('DSponsorNFT', [])
+    await DSponsorNFT.initialize(initDSponsorNFTParams)
+    DSponsorNFTAddress = await DSponsorNFT.getAddress()
+
+    console.log('DSponsorNFT deployed to:', DSponsorNFTAddress)
+
+    const tx = await DSponsorAdmin.createOffer(DSponsorNFTAddress, offerInit)
+*/
+
     await tx.wait(6)
 
     if (!tx.hash) throw new Error('No tx hash')
@@ -1575,7 +1637,7 @@ async function deployOffer({
     const eventDSponsorNFT = receipt?.logs
       .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
       .find((e) => e?.name === 'NewDSponsorNFT')
-    DSponsorNFTAddress = eventDSponsorNFT?.args[0] || ''
+    DSponsorNFTAddress = eventDSponsorNFT?.args[0] || DSponsorNFTAddress
 
     const eventOffer = receipt?.logs
       .map((log: any) => DSponsorAdmin.interface.parseLog(log))
@@ -1586,14 +1648,15 @@ async function deployOffer({
   }
 }
 
-async function deployModeOffer() {
-  const name = 'Mode Network Website Sponsorship (2024)'
-  const symbol = 'DSNFT-MODE'
+async function deployDemoOffer() {
+  const name = 'Demo Offer Sponsorship'
+  const symbol = 'DSNFT-DEMO'
   const maxSupply = 5
   const royaltyBps = 500 // 5%
-  const adParameters: string[] = ['linkURL', 'imageURL-16:9']
-  const currencies = ['0xdfc7c877a950e49d2610114102175a06c2e3167a' /* MODE */]
-  const prices = [BigInt(1000) * BigInt(10) ** BigInt(18)] // 1000 MODE
+  const adParameters: string[] = ['linkURL', 'imageURL-1:1']
+  const currencies: string[] = []
+  // const prices = [BigInt(5) * BigInt(10) ** BigInt(18)] // 5
+  const prices: bigint[] = []
 
   const contractURI =
     'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ'
@@ -1613,50 +1676,33 @@ async function deployModeOffer() {
   })
 }
 
+/////////// Full deployment ///////////////////////////////////
+
 deployContracts()
-  .then(() => deployModeOffer())
-  .then(() => verifyContracts())
+  .then(() => deployDemoOffer())
   .catch((error) => {
     console.error(error)
     process.exitCode = 1
   })
+
+/////////// Offer deployment only ///////////////////////////////////
 
 /*
 
 deployerAddr = '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766'
-chainId = '34443'
-DSponsorNFTImplementationAddr = '0x73adbA5994B48F5139730BE55622f298445179B0'
-DSponsorNFTFactoryAddr = '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D'
-DSponsorAdminAddr = '0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09'
+chainId = '11124'
+DSponsorNFTImplementationAddr = '0xBf8Aa5ECe57D07dd700d3A952eb803C9CC8A0Cdb'
+DSponsorNFTFactoryAddr = '0xAe24518ffC7D699F3328a5eE3666cc5175bE2149'
+DSponsorAdminAddr = '0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571'
+DSponsorMarketplaceAddr = '0x747aCdC82A90cca57587F20Ee1041088F53c3b15'
 
-DSponsorAdminArgs = [
-  '0x5cF7F046818E5Dd71bd3E004f2040E0e3C59467D',
-  '0xD04F98C88cE1054c90022EE34d566B9237a1203C',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x016e131C05fb007b5ab286A6D614A5dab99BD415',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
-  400
-]
-DSponsorMarketplaceAddr = '0xC6cCe35375883872826DdF3C30557F16Ec4DD94c'
+deployDemoOffer().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
 
-DSponsorMarketplaceArgs = [
-  '0xD04F98C88cE1054c90022EE34d566B9237a1203C',
-  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x016e131C05fb007b5ab286A6D614A5dab99BD415',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
-  400
-]
-
-offerId = 1
-DSponsorNFTAddress = '0x141feC749536067fe4b9291FB00a8a398023c7C9'
-
-deployModeOffer()
-  .then(() => verifyContracts())
-  .catch((error) => {
-    console.error(error)
-    process.exitCode = 1
-  })
 */
+/////////////  Results  //////////////////////////////////////////
 
 /*
 
@@ -1735,5 +1781,34 @@ Created offer {
   DSponsorNFTAddress: '0x69d0B85B2F6378229f9EB03E76e82F81D90C2C47'
 }
 
+----------------------------------------------
+
+Deploying to unknown (chainId: 11124) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
+DSponsorNFTImplementation deployed to: 0xBf8Aa5ECe57D07dd700d3A952eb803C9CC8A0Cdb
+DSponsorNFTFactory deployed to: 0xAe24518ffC7D699F3328a5eE3666cc5175bE2149
+DSponsorAdmin deployed to: 0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571  with args:  [
+  '0xAe24518ffC7D699F3328a5eE3666cc5175bE2149',
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
+DSponsorMarketplace deployed to: 0x747aCdC82A90cca57587F20Ee1041088F53c3b15  with args:  [
+  '0x0000000000000000000000000000000000000000',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
+  '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
+  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  400
+]
+
+
+WETH: 0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6
+ERC20Mock: 0xa70e901a190c5605a5137a1019c6514F5a626517
+ERC721Mock: 0xe3aCb7d6F6878a72479c9645489e9D531B789528
+UniswapV3Mock: 0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c
+
+["Demo Offer Sponsorship","DSNFT-DEMO","https://relayer.dsponsor.com/api/11124/tokenMetadata","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ",5,"0x9a7FAC267228f536A8f250E65d7C4CA7d39De766","0x0000000000000000000000000000000000000000","0x9a7FAC267228f536A8f250E65d7C4CA7d39De766",500,["0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6"],[1000000000000000],[0,1,2,3,4]
+["Demo Offer Sponsorship","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmW1QmyXzMEwPyw1x4p2oniHmb1nG9tdPq5sNaJg24ZRtA",[["0x9a7FAC267228f536A8f250E65d7C4CA7d39De766"],[],["linkURL","imageURL-1:1"]]
 
 */

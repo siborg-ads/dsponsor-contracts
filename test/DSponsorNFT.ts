@@ -15,11 +15,11 @@ import {
   DSponsorNFTFactory,
   ERC20Mock,
   ERC721Mock,
-  ReentrantDSponsorNFT
+  ReentrantDSponsorNFT,
+  ERC2771Forwarder
 } from '../typechain-types'
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 
-import { ERC2771Forwarder } from '../typechain-types/@openzeppelin/contracts/metatx/ERC2771Forwarder'
 import { ZERO_ADDRESS } from '../utils/constants'
 
 describe('DSponsorNFT', function () {
@@ -78,7 +78,8 @@ describe('DSponsorNFT', function () {
     user2Addr = await user2.getAddress()
     user3Addr = await user3.getAddress()
 
-    forwarder = await ethers.deployContract('ERC2771Forwarder', [])
+    const forwarderFactory = await ethers.getContractFactory('ERC2771Forwarder')
+    forwarder = await forwarderFactory.deploy('ERC2771Forwarder')
     await forwarder.waitForDeployment()
     forwarderAddress = await forwarder.getAddress()
 
@@ -997,7 +998,9 @@ describe('DSponsorNFT', function () {
         [tokenId, userAddr, ERC20MockAddress, tokenData]
       )
 
-      const forwarder2 = await ethers.deployContract('ERC2771Forwarder', [])
+      const forwarderFactory2 =
+        await ethers.getContractFactory('ERC2771Forwarder')
+      const forwarder2 = await forwarderFactory2.deploy('ERC2771Forwarder')
       await forwarder2.waitForDeployment()
       await DSponsorNFT.connect(owner).setTrustedForwarder(
         await forwarder2.getAddress()
