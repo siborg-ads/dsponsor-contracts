@@ -68,25 +68,26 @@ const config: HardhatUserConfig = {
 
   networks: {
     hardhat: {
-      /*
       forking: {
         url: process.env.BASE_RPC_URL as string,
         blockNumber: 15141916
       },
       chainId: 8453
 
-      
+      /*
       forking: {
         url: 'https://mainnet.mode.network',
         blockNumber: 12774977
       },
       chainId: 34443,
       */
+      /*
       forking: {
         url: 'https://api.testnet.abs.xyz',
         blockNumber: 421315
       },
-      chainId: 11124
+      zksync: true,
+      */
     },
 
     ...deploymentNetworks

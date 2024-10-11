@@ -99,7 +99,8 @@ describe('DSponsorAdmin', function () {
   }
 
   async function deployFixture() {
-    const { chainId: chainIdBigInt } = await provider.getNetwork()
+    const network = await provider.getNetwork()
+    const { chainId: chainIdBigInt } = network
     chainId = chainIdBigInt.toString()
 
     swapRouter = SWAP_ROUTER_ADDR[chainId]
@@ -1125,10 +1126,6 @@ describe('DSponsorAdmin', function () {
     it('Should work as expected for SiBorg', async function () {
       await loadFixture(deployFixture)
 
-      /**
-       * 0. Params to setup
-       */
-
       // todo-creator: define royalties on secondary sales
       const royaltyBps = 690 // 6.9%
 
@@ -1235,9 +1232,7 @@ describe('DSponsorAdmin', function () {
         }
       }
 
-      /**
-       * 1. Create a DSponsorNFT contract and link an offer from it
-       */
+      // 1. Create a DSponsorNFT contract and link an offer from it
 
       const createDSponsorNFTAndOfferTx = await DSponsorAdmin.connect(
         siborgOwner
@@ -1266,9 +1261,7 @@ describe('DSponsorAdmin', function () {
         SiborgDSponsorNFTAddress
       )
 
-      /**
-       * 2. Specify tokens to be minted, and the prices
-       */
+      // 2. Specify tokens to be minted, and the prices
 
       await SiborgDSponsorNFT.connect(siborgOwner).setTokensAllowlist(true)
       await SiborgDSponsorNFT.connect(siborgOwner).setTokensAreAllowed(
@@ -1297,9 +1290,7 @@ describe('DSponsorAdmin', function () {
         defaultAmount
       )
 
-      /**
-       * 3. Mint a token and submit an ad proposal
-       */
+      // 3. Mint a token and submit an ad proposal
 
       const fetchedBps = await DSponsorAdmin.connect(sponsor1).feeBps()
       const mintAmounts = (amount: bigint) => {
@@ -1308,9 +1299,8 @@ describe('DSponsorAdmin', function () {
         return { amount, fee, amountWithFee }
       }
 
-      /**
-       * Mint with ERC20 payment
-       */
+      // Mint with ERC20 payment
+
       const mintParams0 = {
         tokenId: stringToUint256(tokenizedKeywords[0]), // tokenIds[0]
         to: sponsor1Addr,
@@ -1343,9 +1333,8 @@ describe('DSponsorAdmin', function () {
         await SiborgDSponsorNFT.ownerOf(stringToUint256('bitcoin'))
       ).to.equal(sponsor1Addr)
 
-      /**
-       * Mint with native currency payment
-       */
+      // Mint with native currency payment
+
       const mintParams1 = {
         tokenId: stringToUint256(tokenizedKeywords[1]), // tokenIds[1]
         to: sponsor2Addr,
@@ -1376,10 +1365,8 @@ describe('DSponsorAdmin', function () {
         await SiborgDSponsorNFT.ownerOf(stringToUint256('ethereum'))
       ).to.equal(sponsor2Addr)
 
-      /**
-       * Mint with swap, paid by sponsor2 for sponsor1
-       * sponsor1 will receive the refund from the swap
-       */
+      // Mint with swap, paid by sponsor2 for sponsor1 sponsor1 will receive the refund from the swap
+
       const mintParams2 = {
         tokenId: stringToUint256(tokenizedKeywords[2]), // tokenIds[2]
         to: sponsor1Addr,
@@ -1427,10 +1414,7 @@ describe('DSponsorAdmin', function () {
       expect(await SiborgDSponsorNFT.totalSupply()).to.be.equal(3)
       expect(await SiborgDSponsorNFT.MAX_SUPPLY()).to.be.equal(uint256Max)
 
-      /**
-       * siborgOwner mints and transfers it
-       * (simulate secondary sale)
-       */
+      // siborgOwner mints and transfers it (simulate secondary sale)
       await SiborgDSponsorNFT.connect(siborgOwner).mint(
         stringToUint256('crypto'),
         siborgOwnerAddr,
@@ -1494,9 +1478,7 @@ describe('DSponsorAdmin', function () {
         )
       ).to.be.revertedWithCustomError(SiborgDSponsorNFT, 'TokenNotAllowed')
 
-      /**
-       * 4. Validate ad proposals
-       */
+      // 4. Validate ad proposals
 
       const receipt0 = await provider.getTransactionReceipt(mintTx0.hash)
       const events0 = receipt0?.logs

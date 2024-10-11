@@ -73,13 +73,13 @@ This contract manages secondary sales and includes:
 
 ### Abstract Testnet (Chain ID = 11124)
 
-- `DSponsorAdmin`: [`0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571`](https://explorer.testnet.abs.xyz/address/0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571)
+- `DSponsorAdmin`: [`0xBEA0a4E815e5A8b544712144DA3865a1aa69ECD9`](https://explorer.testnet.abs.xyz/address/0xBEA0a4E815e5A8b544712144DA3865a1aa69ECD9)
 
-- `DSponsorNFTFactory`: [`0xAe24518ffC7D699F3328a5eE3666cc5175bE2149`](https://explorer.testnet.abs.xyz/address/0xAe24518ffC7D699F3328a5eE3666cc5175bE2149)
+- `DSponsorNFTFactory`: [`0x9FCf7ecdC815B21E18C5eda720Db9e41a6EaE6B9`](https://explorer.testnet.abs.xyz/address/0x9FCf7ecdC815B21E18C5eda720Db9e41a6EaE6B9)
 
-- Example of `DSponsorNFT` deployed: [`0x651212D1B779fC0d0a5d4Fd966D0C97C3F021E98`](https://explorer.testnet.abs.xyz/address/0x651212D1B779fC0d0a5d4Fd966D0C97C3F021E98)
+- Example of `DSponsorNFT` deployed: [`0xE40f24dc5B6b7D10890Fd7d3196c1A93957247A8`](https://explorer.testnet.abs.xyz/address/0xE40f24dc5B6b7D10890Fd7d3196c1A93957247A8)
 
-- `DSponsorMarketplace`: [`0x747aCdC82A90cca57587F20Ee1041088F53c3b15`](https://explorer.testnet.abs.xyz/address/0x747aCdC82A90cca57587F20Ee1041088F53c3b15)
+- `DSponsorMarketplace`: [`0x833721E8651682043CDFcD577Aa2DC5b3D28abC6`](https://explorer.testnet.abs.xyz/address/0x833721E8651682043CDFcD577Aa2DC5b3D28abC6)
 
 ## Development
 

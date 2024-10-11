@@ -1654,9 +1654,8 @@ async function deployDemoOffer() {
   const maxSupply = 5
   const royaltyBps = 500 // 5%
   const adParameters: string[] = ['linkURL', 'imageURL-1:1']
-  const currencies: string[] = []
-  // const prices = [BigInt(5) * BigInt(10) ** BigInt(18)] // 5
-  const prices: bigint[] = []
+  const currencies: string[] = [WETH_ADDR[chainId]]
+  const prices = [BigInt('10000000000000000')] // 0.01
 
   const contractURI =
     'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ'
@@ -1784,31 +1783,32 @@ Created offer {
 ----------------------------------------------
 
 Deploying to unknown (chainId: 11124) with deployer: 0x9a7FAC267228f536A8f250E65d7C4CA7d39De766
-DSponsorNFTImplementation deployed to: 0xBf8Aa5ECe57D07dd700d3A952eb803C9CC8A0Cdb
-DSponsorNFTFactory deployed to: 0xAe24518ffC7D699F3328a5eE3666cc5175bE2149
-DSponsorAdmin deployed to: 0xA3B2469A2a4422058F70C59Fcd63EdaA219A2571  with args:  [
-  '0xAe24518ffC7D699F3328a5eE3666cc5175bE2149',
+DSponsorNFTImplementation deployed to: 0xadEc59aBF577aC61939D1742d622FaF97A28Fdf8
+DSponsorNFTFactory deployed to: 0x9FCf7ecdC815B21E18C5eda720Db9e41a6EaE6B9
+DSponsorAdmin deployed to: 0xBEA0a4E815e5A8b544712144DA3865a1aa69ECD9  with args:  [
+  '0x9FCf7ecdC815B21E18C5eda720Db9e41a6EaE6B9',
   '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  '0x5eA0064fE5bc2449472C7DfF9CB4bc5010095392',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   400
 ]
-DSponsorMarketplace deployed to: 0x747aCdC82A90cca57587F20Ee1041088F53c3b15  with args:  [
+DSponsorMarketplace deployed to: 0x833721E8651682043CDFcD577Aa2DC5b3D28abC6  with args:  [
   '0x0000000000000000000000000000000000000000',
   '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
-  '0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c',
-  '0x5b15Cbb40Ef056F74130F0e6A1e6FD183b14Cdaf',
+  '0x5eA0064fE5bc2449472C7DfF9CB4bc5010095392',
+  '0x9a7FAC267228f536A8f250E65d7C4CA7d39De766',
   400
 ]
+Created offer {
+  offerId: 1n,
+  DSponsorNFTAddress: '0xE40f24dc5B6b7D10890Fd7d3196c1A93957247A8'
+}
 
 
-WETH: 0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6
+WETHMock: 0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6
 ERC20Mock: 0xa70e901a190c5605a5137a1019c6514F5a626517
 ERC721Mock: 0xe3aCb7d6F6878a72479c9645489e9D531B789528
 UniswapV3Mock: 0x03DD2f8996A2fBA6a4f7b3A383C4c0Ff367Dd95c
-
-["Demo Offer Sponsorship","DSNFT-DEMO","https://relayer.dsponsor.com/api/11124/tokenMetadata","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmQ3tcHLpCF5DDn53BaEFDNnvfkcoKGg7N5mfZhtF9wHsJ",5,"0x9a7FAC267228f536A8f250E65d7C4CA7d39De766","0x0000000000000000000000000000000000000000","0x9a7FAC267228f536A8f250E65d7C4CA7d39De766",500,["0x80392dF95f8ed7F2f6299Be35A1007f31D5Fc5b6"],[1000000000000000],[0,1,2,3,4]
-["Demo Offer Sponsorship","https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmW1QmyXzMEwPyw1x4p2oniHmb1nG9tdPq5sNaJg24ZRtA",[["0x9a7FAC267228f536A8f250E65d7C4CA7d39De766"],[],["linkURL","imageURL-1:1"]]
 
 */
