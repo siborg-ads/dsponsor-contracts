@@ -1636,12 +1636,12 @@ async function deployOffer({
 
     const eventDSponsorNFT = receipt?.logs
       .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
-      .find((e) => e?.name === 'NewDSponsorNFT')
+      .find((e: any) => e?.name === 'NewDSponsorNFT')
     DSponsorNFTAddress = eventDSponsorNFT?.args[0] || DSponsorNFTAddress
 
     const eventOffer = receipt?.logs
       .map((log: any) => DSponsorAdmin.interface.parseLog(log))
-      .find((e) => e?.name === 'UpdateOffer')
+      .find((e: any) => e?.name === 'UpdateOffer')
     offerId = eventOffer?.args[0] || ''
 
     console.log('Created offer', { offerId, DSponsorNFTAddress })
@@ -1681,7 +1681,6 @@ deployContracts()
   .then(() => deployDemoOffer())
   .catch((error) => {
     console.error(error)
-    process.exitCode = 1
   })
 
 /////////// Offer deployment only ///////////////////////////////////
