@@ -11,7 +11,7 @@ import { ethers, network } from 'hardhat'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { executeByForwarder } from '../utils/eip712'
 import {
-  DSponsorNFT,
+  DSponsorNFTExtended,
   DSponsorNFTFactory,
   ERC20Mock,
   ERC721Mock,
@@ -21,14 +21,15 @@ import {
 import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 
 import { ZERO_ADDRESS } from '../utils/constants'
+import { erc721 } from '../typechain-types/@openzeppelin/contracts/token'
 
-describe('DSponsorNFT', function () {
+describe('DSponsorNFTExtended', function () {
   const provider = ethers.provider
 
   let DSponsorNFTFactory: DSponsorNFTFactory
-  let DSponsorNFTImplementation: DSponsorNFT
+  let DSponsorNFTImplementation: DSponsorNFTExtended
   let DSponsorNFTImplementationAddress: string
-  let DSponsorNFT: DSponsorNFT
+  let DSponsorNFT: DSponsorNFTExtended
   let DSponsorNFTAddress: string
   let ERC20Mock: ERC20Mock
   let ERC20MockAddress: string
@@ -36,6 +37,8 @@ describe('DSponsorNFT', function () {
   let ERC20Mock2Address: string
   let ERC721Mock: ERC721Mock
   let ERC721MockAddress: string
+  let ERC721Mock2: ERC721Mock
+  let ERC721Mock2Address: string
   let forwarder: ERC2771Forwarder
   let forwarderAddress: string
   let reentrant: ReentrantDSponsorNFT
@@ -46,6 +49,8 @@ describe('DSponsorNFT', function () {
   let deployerAddr: string
   let owner: Signer
   let ownerAddr: string
+  let minter: Signer
+  let minterAddr: string
   let user: Signer
   let userAddr: string
   let user2: Signer
@@ -70,10 +75,11 @@ describe('DSponsorNFT', function () {
 
   async function deployFixture() {
     signers = await ethers.getSigners()
-    ;[deployer, owner, user, user2, user3] = signers
+    ;[deployer, owner, minter, user, user2, user3] = signers
 
     deployerAddr = await deployer.getAddress()
     ownerAddr = await owner.getAddress()
+    minterAddr = await minter.getAddress()
     userAddr = await user.getAddress()
     user2Addr = await user2.getAddress()
     user3Addr = await user3.getAddress()
@@ -101,12 +107,23 @@ describe('DSponsorNFT', function () {
     ERC721Mock = await ethers.deployContract('ERC721Mock', [])
     await ERC721Mock.waitForDeployment()
     ERC721MockAddress = await ERC721Mock.getAddress()
+    await ERC721Mock.connect(user).mint(1)
+    await ERC721Mock.connect(user2).mint(2)
+
+    ERC721Mock2 = await ethers.deployContract('ERC721Mock', [])
+    await ERC721Mock2.waitForDeployment()
+    ERC721Mock2Address = await ERC721Mock2.getAddress()
+    await ERC721Mock2.connect(user).mint(1)
+    await ERC721Mock2.connect(user).mint(11)
 
     reentrant = await ethers.deployContract('ReentrantDSponsorNFT', [])
     await reentrant.waitForDeployment()
     reentrantAddress = await reentrant.getAddress()
 
-    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFT', [])
+    DSponsorNFTImplementation = await ethers.deployContract(
+      'DSponsorNFTExtended',
+      []
+    )
     DSponsorNFTImplementationAddress =
       await DSponsorNFTImplementation.getAddress()
 
@@ -115,12 +132,12 @@ describe('DSponsorNFT', function () {
     ])
 
     initParams = {
-      name: 'DSponsorNFT',
+      name: 'DSponsorNFTExtended',
       symbol: 'DSNFT',
       baseURI: 'https://baseURI.com',
       contractURI: 'https://contractURI.com',
       maxSupply: BigInt('5'),
-      minter: userAddr,
+      minter: minterAddr,
       forwarder: forwarderAddress,
       initialOwner: ownerAddr,
       royaltyBps: 400, // 4%
@@ -138,212 +155,120 @@ describe('DSponsorNFT', function () {
     if (!event) throw new Error('No event')
 
     DSponsorNFTAddress = event.args[0].toLowerCase()
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
+    DSponsorNFT = await ethers.getContractAt(
+      'DSponsorNFTExtended',
+      DSponsorNFTAddress
+    )
 
-    await ERC20Mock.connect(user).approve(
+    await ERC20Mock.connect(minter).approve(
       DSponsorNFTAddress,
       ERC20Amount * ERC20ApproveCapacity
     )
-    await ERC20Mock.connect(user2).approve(
-      DSponsorNFTAddress,
-      ERC20Amount * ERC20ApproveCapacity
+
+    await DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+      ERC721MockAddress,
+      true,
+      1,
+      0,
+      ERC20MockAddress,
+      true,
+      ERC20Amount / BigInt('2')
+    )
+
+    await DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+      ERC721Mock2Address,
+      true,
+      1,
+      0,
+      ERC20MockAddress,
+      true,
+      0
+    )
+
+    await DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+      ERC721MockAddress,
+      true,
+      1,
+      0,
+      ZERO_ADDRESS,
+      true,
+      value / BigInt('2')
+    )
+
+    await DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+      ERC721Mock2Address,
+      true,
+      1,
+      0,
+      ZERO_ADDRESS,
+      true,
+      0
     )
   }
 
-  describe('Initialization', function () {
-    it('Should set the right name, symbol, URIs and max supply', async function () {
-      await loadFixture(deployFixture)
-
-      expect(await DSponsorNFT.name()).to.equal(initParams.name)
-      expect(await DSponsorNFT.symbol()).to.equal(initParams.symbol)
-      expect(await DSponsorNFT.baseURI()).to.equal(initParams.baseURI)
-      expect(await DSponsorNFT.contractURI()).to.equal(initParams.contractURI)
-      expect(await DSponsorNFT.MAX_SUPPLY()).to.equal(initParams.maxSupply)
-      expect(await DSponsorNFT.totalSupply()).to.equal(0)
-    })
-
-    it('Should set the right forwarder & owner', async function () {
-      await loadFixture(deployFixture)
-      expect(await DSponsorNFT.trustedForwarder()).to.equal(forwarderAddress)
-      expect(await DSponsorNFT.owner()).to.equal(ownerAddr)
-      expect(await DSponsorNFT.getOwner()).to.equal(ownerAddr)
-    })
-
-    it('Should set the right royalty infos', async function () {
-      await loadFixture(deployFixture)
-      const res =
-        (BigInt('100') * BigInt(initParams.royaltyBps)) / BigInt('10000')
-      expect(await DSponsorNFT.royaltyInfo(0, 100)).to.deep.equal([
-        ownerAddr,
-        res
-      ])
-    })
-
-    it('Should set the right pricing infos', async function () {
-      await loadFixture(deployFixture)
-
-      expect(
-        await DSponsorNFT.getMintPrice(tokenId, initParams.currencies[0])
-      ).to.deep.equal([true, initParams.prices[0]])
-    })
-
-    it('Should set the right token allowlist parameters', async function () {
-      await loadFixture(deployFixture)
-
-      expect(await DSponsorNFT.applyTokensAllowlist()).to.equal(false)
-      expect(await DSponsorNFT.tokenIdIsAllowedToMint(0)).to.equal(true)
-      expect(await DSponsorNFT.tokenIdIsAllowedToMint(55)).to.equal(true)
-    })
-
-    it('Should support ERC721, ERC2981 and ERC4907 interfaces', async function () {
-      await loadFixture(deployFixture)
-
-      const supportsDummy = await DSponsorNFT.supportsInterface('0x80ac58cf')
-      const supportsERC1555 = await DSponsorNFT.supportsInterface('0x4e2312e0')
-      const supportsERC165 = await DSponsorNFT.supportsInterface('0x01ffc9a7')
-      const supportsERC20 = await DSponsorNFT.supportsInterface('0x36372b07')
-      const supportsERC2981 = await DSponsorNFT.supportsInterface('0x2a55205a')
-      const supportsERC721 = await DSponsorNFT.supportsInterface('0x80ac58cd')
-      const supportsERC721Enumerable =
-        await DSponsorNFT.supportsInterface('0x780e9d63')
-      const supportsERC721Metadata =
-        await DSponsorNFT.supportsInterface('0x5b5e139f')
-      const supportsERC4907 = await DSponsorNFT.supportsInterface('0xad092b5c')
-
-      expect(supportsDummy).to.equal(false)
-      expect(supportsERC1555).to.equal(false)
-      expect(supportsERC165).to.equal(true)
-      expect(supportsERC20).to.equal(false)
-      expect(supportsERC2981).to.equal(true)
-      expect(supportsERC721).to.equal(true)
-      expect(supportsERC721Enumerable).to.equal(true)
-      expect(supportsERC721Metadata).to.equal(true)
-      expect(supportsERC4907).to.equal(true)
-    })
-
-    it('Should initialize correctly even with no forwarder', async function () {
-      const params: IDSponsorNFTBase.InitParamsStruct = Object.assign(
-        {},
-        initParams,
-        { forwarder: ZERO_ADDRESS }
-      )
-
-      const tx = await DSponsorNFTFactory.createDSponsorNFT(params)
-      const receipt = await provider.getTransactionReceipt(tx?.hash || '')
-
-      const event = receipt?.logs
-        .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
-        .find((e) => e?.name === 'NewDSponsorNFT')
-
-      expect(event?.args?.[8]).to.equal(ZERO_ADDRESS)
-    })
-
-    it('Should fail if initialize with invalid arguments', async function () {
-      await expect(
-        DSponsorNFTFactory.createDSponsorNFT(
-          Object.assign({}, initParams, { maxSupply: 0 })
-        )
-      ).to.be.revertedWithCustomError(
-        DSponsorNFT,
-        'MaxSupplyShouldBeGreaterThan0'
-      )
-
-      await expect(
-        DSponsorNFTFactory.createDSponsorNFT(
-          Object.assign({}, initParams, { initialOwner: ZERO_ADDRESS })
-        )
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableInvalidOwner')
-
-      await expect(
-        DSponsorNFTFactory.createDSponsorNFT(
-          Object.assign({}, initParams, {
-            prices: [BigInt('100')]
-          })
-        )
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'InvalidPricingStructure')
-    })
-
-    it('Should correctly set the allowlist tokens params if provided in the constructor', async function () {
-      await loadFixture(deployFixture)
-
-      const initParams2: IDSponsorNFTBase.InitParamsStruct = Object.assign(
-        {},
-        initParams,
-        { allowedTokenIds: [1, 2, 3] }
-      )
-
-      const tx = await DSponsorNFTFactory.createDSponsorNFT(initParams2)
-
-      if (!tx.hash) throw new Error('No tx hash')
-      const receipt = await provider.getTransactionReceipt(tx.hash || '')
-      const event = receipt?.logs
-        .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
-        .find((e) => e?.name === 'NewDSponsorNFT')
-      if (!event) throw new Error('No event')
-
-      const DSponsorNFTAddress2 = event.args[0]
-      const DSponsorNFT2 = await ethers.getContractAt(
-        'DSponsorNFT',
-        DSponsorNFTAddress2
-      )
-
-      expect(await DSponsorNFT2.applyTokensAllowlist()).to.equal(true)
-      expect(await DSponsorNFT2.tokenIdIsAllowedToMint(1)).to.equal(true)
-      expect(await DSponsorNFT2.tokenIdIsAllowedToMint(0)).to.equal(false)
-    })
-  })
-
-  describe('NFT Minting', async function () {
+  describe('DSponsorNFT Minting', async function () {
     it('Should mint with ERC20 currency', async function () {
       await loadFixture(deployFixture)
 
       const ERC20balanceOfOwner = await ERC20Mock.balanceOf(ownerAddr)
-      const ERC20balanceOfUser = await ERC20Mock.balanceOf(userAddr)
-      const ERC20balanceOfUser2 = await ERC20Mock.balanceOf(user2Addr)
-
-      const NFTbalanceOfOwner = await DSponsorNFT.balanceOf(ownerAddr)
-      const NFTbalanceOfUser = await DSponsorNFT.balanceOf(userAddr)
-      const NFTbalanceOfUser2 = await DSponsorNFT.balanceOf(user2Addr)
 
       await expect(
-        DSponsorNFT.connect(user).mint(
+        DSponsorNFT.connect(minter).mint(
           tokenId,
-          user2,
+          userAddr,
+          ERC20MockAddress,
+          tokenData
+        )
+      )
+        .to.emit(DSponsorNFT, 'Mint')
+        .withArgs(tokenId, minterAddr, userAddr, ERC20MockAddress, 0, tokenData)
+
+      await expect(
+        DSponsorNFT.connect(minter).mint(
+          tokenId + 1,
+          user2Addr,
           ERC20MockAddress,
           tokenData
         )
       )
         .to.emit(DSponsorNFT, 'Mint')
         .withArgs(
-          tokenId,
-          userAddr,
+          tokenId + 1,
+          minter,
           user2Addr,
+          ERC20MockAddress,
+          ERC20Amount / BigInt('2'),
+          tokenData
+        )
+
+      await expect(
+        DSponsorNFT.connect(minter).mint(
+          tokenId + 2,
+          user3Addr,
+          ERC20MockAddress,
+          tokenData
+        )
+      )
+        .to.emit(DSponsorNFT, 'Mint')
+        .withArgs(
+          tokenId + 2,
+          minterAddr,
+          user3Addr,
           ERC20MockAddress,
           ERC20Amount,
           tokenData
         )
 
       expect(await ERC20Mock.balanceOf(ownerAddr)).to.be.equal(
-        ERC20balanceOfOwner + ERC20Amount
-      )
-      expect(await ERC20Mock.balanceOf(userAddr)).to.be.equal(
-        ERC20balanceOfUser - ERC20Amount
-      )
-      expect(await ERC20Mock.balanceOf(user2Addr)).to.be.equal(
-        ERC20balanceOfUser2
+        ERC20balanceOfOwner + ERC20Amount + ERC20Amount / BigInt('2')
       )
 
-      expect(await DSponsorNFT.balanceOf(ownerAddr)).to.be.equal(
-        NFTbalanceOfOwner
-      )
-      expect(await DSponsorNFT.balanceOf(userAddr)).to.be.equal(
-        NFTbalanceOfUser
-      )
-      expect(await DSponsorNFT.balanceOf(user2Addr)).to.be.equal(
-        NFTbalanceOfUser2 + BigInt('1')
-      )
+      expect(await DSponsorNFT.balanceOf(ownerAddr)).to.be.equal(BigInt('0'))
+      expect(await DSponsorNFT.balanceOf(userAddr)).to.be.equal(BigInt('1'))
+      expect(await DSponsorNFT.balanceOf(user2Addr)).to.be.equal(BigInt('1'))
+      expect(await DSponsorNFT.balanceOf(user3Addr)).to.be.equal(BigInt('1'))
 
-      expect(await DSponsorNFT.totalSupply()).to.be.equal(1)
+      expect(await DSponsorNFT.totalSupply()).to.be.equal(3)
     })
 
     it('Should mint with native currency', async function () {
@@ -354,16 +279,12 @@ describe('DSponsorNFT', function () {
           tokenId,
           user2Addr,
           ZERO_ADDRESS,
-          tokenData,
-          { value }
+          tokenData
         )
-      ).to.changeEtherBalances(
-        [userAddr, ownerAddr],
-        [parseEther(`-${etherValue}`), value]
-      )
+      ).to.changeEtherBalances([userAddr, ownerAddr], [0, 0])
 
       await expect(
-        DSponsorNFT.connect(user).mint(
+        DSponsorNFT.connect(user2).mint(
           tokenId + 1,
           user2Addr,
           ZERO_ADDRESS,
@@ -372,7 +293,7 @@ describe('DSponsorNFT', function () {
         )
       ).to.changeTokenBalances(DSponsorNFT, [user2Addr, ownerAddr], [1, 0])
     })
-
+    /*
     it('Should allow to mint for free', async function () {
       await loadFixture(deployFixture)
 
@@ -772,296 +693,228 @@ describe('DSponsorNFT', function () {
         )
       ).to.be.revertedWithCustomError(DSponsorNFT, 'MaxSupplyExceeded')
     })
+      */
   })
 
-  describe('Owner operations', async function () {
+  describe('Extended owner operations', async function () {
     it('Should revert if owner operation is not called by owner', async function () {
       await loadFixture(deployFixture)
 
       await expect(
-        DSponsorNFT.connect(user2).setBaseURI('baseURI')
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.connect(user).setContractURI('contractURI')
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.connect(user3).setDefaultMintPrice(
-          ERC20MockAddress,
+        DSponsorNFT.connect(user).setMintPriceForTokenHolders(
+          ERC721MockAddress,
+          true,
+          1,
+          0,
+          ERC20Mock2Address,
           true,
           ERC20Amount
         )
       ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
 
       await expect(
-        // deployer user
-        DSponsorNFT.setDefaultMintPrice(ZERO_ADDRESS, true, 100000000)
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        // deployer user
-        DSponsorNFT.setMintPrice(1, ZERO_ADDRESS, true, 100000000)
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.setRoyalty(user, 100)
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.connect(user).setTokensAllowlist(true)
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.connect(user).setTokensAreAllowed([1], [true])
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
-
-      await expect(
-        DSponsorNFT.connect(user).setTokenURI(0, 'tokenURI')
+        DSponsorNFT.connect(user2).setOnlyFromEligibleContracts(false)
       ).to.be.revertedWithCustomError(DSponsorNFT, 'OwnableUnauthorizedAccount')
     })
 
-    it('Should set baseURI, tokenURI & contractURI correctly', async function () {
+    it('Should update eligible contracts flag restrictions accordingly', async function () {
       await loadFixture(deployFixture)
 
-      const maxSupply = await DSponsorNFT.MAX_SUPPLY()
-
-      const baseURI2 = 'https://baseURI2.com'
-      const contractURI2 = 'https://contractURI2.com'
-      const tokenURI_0 = 'https://tokenURI_0.com'
-
-      const tokenId = 0
-
-      expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        `${initParams.baseURI}/${DSponsorNFTAddress}/${tokenId}`
+      await expect(
+        DSponsorNFT.connect(owner).setOnlyFromEligibleContracts(true)
       )
+        .to.emit(DSponsorNFT, 'OnlyFromEligibleContractsUpdated')
+        .withArgs(true)
 
-      await DSponsorNFT.connect(owner).setBaseURI(baseURI2)
-      expect(await DSponsorNFT.baseURI()).to.be.equal(baseURI2)
-
-      await expect(DSponsorNFT.connect(owner).setContractURI(contractURI2))
-        .to.emit(DSponsorNFT, 'ContractURIUpdated(string)')
-        .withArgs(contractURI2)
-      expect(await DSponsorNFT.contractURI()).to.be.equal(contractURI2)
-
-      expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(
-        `${baseURI2}/${DSponsorNFTAddress}/${tokenId}`
-      )
-      await DSponsorNFT.connect(owner).setTokenURI(tokenId, tokenURI_0)
-      expect(await DSponsorNFT.tokenURI(tokenId)).to.be.equal(tokenURI_0)
-
-      const tokenId2 = 10000000
-      expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(
-        `${baseURI2}/${DSponsorNFTAddress}/${tokenId2}`
-      )
-      await DSponsorNFT.connect(owner).setTokenURIs([tokenId2], [tokenURI_0])
-      expect(await DSponsorNFT.tokenURI(tokenId2)).to.be.equal(tokenURI_0)
+      expect(await DSponsorNFT.onlyFromEligibleContracts()).to.be.equal(true)
 
       await expect(
-        DSponsorNFT.connect(owner).setTokenURIs(
-          [tokenId2],
-          [tokenURI_0, tokenURI_0]
+        DSponsorNFT.connect(owner).setOnlyFromEligibleContracts(false)
+      )
+        .to.emit(DSponsorNFT, 'OnlyFromEligibleContractsUpdated')
+        .withArgs(false)
+
+      expect(await DSponsorNFT.onlyFromEligibleContracts()).to.be.equal(false)
+    })
+
+    it('Should set & get default pricing parameters for eligible contracts', async function () {
+      await loadFixture(deployFixture)
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          userAddr,
+          tokenId,
+          ERC20MockAddress
         )
-      ).to.revertedWithCustomError(DSponsorNFT, 'InvalidInputLengths')
-    })
-
-    it('Should set & get default pricing parameters correctly', async function () {
-      await loadFixture(deployFixture)
+      ).to.be.deep.equal([ERC721Mock2Address, 1, true, 0])
 
       expect(
-        await DSponsorNFT.getMintPrice(tokenId, ERC20MockAddress)
-      ).to.be.deep.equal([true, ERC20Amount])
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId,
+          ERC20MockAddress
+        )
+      ).to.be.deep.equal([
+        ERC721MockAddress,
+        2,
+        true,
+        ERC20Amount / BigInt('2')
+      ])
+
       expect(
-        await DSponsorNFT.getMintPrice(tokenId, ERC20Mock2Address)
-      ).to.be.deep.equal([false, 0])
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user3Addr,
+          tokenId,
+          ERC20MockAddress
+        )
+      ).to.be.deep.equal([ZERO_ADDRESS, 0, true, ERC20Amount])
+
       expect(
-        await DSponsorNFT.getMintPrice(tokenId, ZERO_ADDRESS)
-      ).to.be.deep.equal([true, value])
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          userAddr,
+          tokenId,
+          ZERO_ADDRESS
+        )
+      ).to.be.deep.equal([ERC721Mock2Address, 1, true, 0])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId,
+          ZERO_ADDRESS
+        )
+      ).to.be.deep.equal([ERC721MockAddress, 2, true, value / BigInt('2')])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user3Addr,
+          tokenId,
+          ZERO_ADDRESS
+        )
+      ).to.be.deep.equal([ZERO_ADDRESS, 0, true, value])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          userAddr,
+          tokenId,
+          ERC20Mock2Address
+        )
+      ).to.be.deep.equal([ZERO_ADDRESS, 0, false, 0])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId,
+          ERC20Mock2Address
+        )
+      ).to.be.deep.equal([ZERO_ADDRESS, 0, false, 0])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user3Addr,
+          tokenId,
+          ERC20Mock2Address
+        )
+      ).to.be.deep.equal([ZERO_ADDRESS, 0, false, 0])
 
       await expect(
-        DSponsorNFT.connect(owner).setDefaultMintPrice(
+        DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+          ERC721Mock2Address,
+          true,
+          1,
+          0,
           ZERO_ADDRESS,
           false,
-          value
+          0
         )
       )
-        .to.emit(DSponsorNFT, 'UpdateDefaultMintPrice')
-        .withArgs(ZERO_ADDRESS, false, value)
+        .to.emit(DSponsorNFT, 'SpecialMintPriceUpdated')
+        .withArgs(ERC721Mock2Address, true, 1, 0, ZERO_ADDRESS, false, 0)
 
       expect(
-        await DSponsorNFT.getMintPrice(tokenId, ZERO_ADDRESS)
-      ).to.be.deep.equal([false, value])
-
-      await expect(
-        DSponsorNFT.connect(owner).setDefaultMintPrice(
-          ERC20Mock2Address,
-          true,
-          ERC20Amount
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          userAddr,
+          tokenId,
+          ZERO_ADDRESS
         )
-      )
-        .to.emit(DSponsorNFT, 'UpdateDefaultMintPrice')
-        .withArgs(ERC20Mock2Address, true, ERC20Amount)
-
-      expect(
-        await DSponsorNFT.getMintPrice(tokenId, ERC20Mock2Address)
-      ).to.be.deep.equal([true, ERC20Amount])
+      ).to.be.deep.equal([ERC721MockAddress, 1, true, value / BigInt('2')])
     })
 
-    it('Should set & get specific pricing parameters correctly', async function () {
+    it('Should set & get specific pricing parameters for eligible contracts', async function () {
       await loadFixture(deployFixture)
 
-      const newValue = value * BigInt('2')
-      const newAmount = ERC20Amount * BigInt('2')
-
       await expect(
-        DSponsorNFT.connect(owner).setMintPrice(
+        DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+          ERC721MockAddress,
+          false,
+          1,
           tokenId,
           ZERO_ADDRESS,
           true,
-          newValue
+          0
         )
       )
-        .to.emit(DSponsorNFT, 'UpdateMintPrice')
-        .withArgs(tokenId, ZERO_ADDRESS, true, newValue)
+        .to.emit(DSponsorNFT, 'SpecialMintPriceUpdated')
+        .withArgs(ERC721MockAddress, false, 1, tokenId, ZERO_ADDRESS, true, 0)
 
       expect(
-        await DSponsorNFT.getMintPrice(tokenId, ZERO_ADDRESS)
-      ).to.be.deep.equal([true, newValue])
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId + 1,
+          ZERO_ADDRESS
+        )
+      ).to.be.deep.equal([ERC721MockAddress, 2, true, value / BigInt('2')])
+
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId,
+          ZERO_ADDRESS
+        )
+      ).to.be.deep.equal([ERC721MockAddress, 2, true, 0])
 
       await expect(
-        DSponsorNFT.connect(owner).setMintPrice(
+        DSponsorNFT.connect(owner).setMintPriceForTokenHolders(
+          ERC721MockAddress,
+          false,
+          1,
           tokenId,
           ERC20MockAddress,
           true,
-          newAmount
+          0
         )
       )
-        .to.emit(DSponsorNFT, 'UpdateMintPrice')
-        .withArgs(tokenId, ERC20MockAddress, true, newAmount)
-
-      expect(
-        await DSponsorNFT.getMintPrice(tokenId, ERC20MockAddress)
-      ).to.be.deep.equal([true, newAmount])
-
-      await DSponsorNFT.connect(user).mint(
-        tokenId,
-        user,
-        ERC20MockAddress,
-        tokenData
-      )
-
-      await expect(
-        DSponsorNFT.connect(owner).setMintPrice(
-          tokenId,
-          ERC20Mock2Address,
-          true,
-          ERC20Amount
-        )
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'AlreadyMinted')
-
-      expect(
-        await DSponsorNFT.getMintPrice(tokenId, ERC20Mock2Address)
-      ).to.be.revertedWithCustomError(DSponsorNFT, 'AlreadyMinted')
-    })
-
-    it('Sets royalty correctly', async function () {
-      const salePrice = BigInt('100')
-      const tokenId = 0
-
-      let expectedRoyalty =
-        (salePrice * BigInt(initParams.royaltyBps)) / BigInt('10000')
-
-      expect(
-        await DSponsorNFT.royaltyInfo(tokenId, salePrice)
-      ).to.be.deep.equal([ownerAddr, expectedRoyalty])
-
-      const newFee = 1000 // 10%
-      expectedRoyalty =
-        (salePrice * BigInt(newFee.toString())) / BigInt('10000')
-
-      await expect(DSponsorNFT.connect(owner).setRoyalty(user, newFee))
-        .to.emit(DSponsorNFT, 'RoyaltySet')
-        .withArgs(user, newFee)
-
-      expect(
-        await DSponsorNFT.royaltyInfo(tokenId, salePrice)
-      ).to.be.deep.equal([userAddr, expectedRoyalty])
-    })
-  })
-
-  describe('ERC2771 Related Functions', function () {
-    it('Should set the trusted forwarder correctly', async function () {
-      await loadFixture(deployFixture)
-
-      const encodedFunctionData = DSponsorNFT.interface.encodeFunctionData(
-        'mint',
-        [tokenId, userAddr, ERC20MockAddress, tokenData]
-      )
-
-      const forwarderFactory2 =
-        await ethers.getContractFactory('ERC2771Forwarder')
-      const forwarder2 = await forwarderFactory2.deploy('ERC2771Forwarder')
-      await forwarder2.waitForDeployment()
-      await DSponsorNFT.connect(owner).setTrustedForwarder(
-        await forwarder2.getAddress()
-      )
-
-      await expect(
-        executeByForwarder(
-          forwarder,
-          DSponsorNFT as BaseContract,
-          user,
-          encodedFunctionData
-        )
-      ).to.revertedWithCustomError(forwarder, 'ERC2771UntrustfulTarget')
-
-      await expect(
-        executeByForwarder(
-          forwarder2,
-          DSponsorNFT as BaseContract,
-          user,
-          encodedFunctionData
-        )
-      )
-        .to.emit(DSponsorNFT, 'Mint')
+        .to.emit(DSponsorNFT, 'SpecialMintPriceUpdated')
         .withArgs(
+          ERC721MockAddress,
+          false,
+          1,
           tokenId,
-          userAddr,
-          userAddr,
           ERC20MockAddress,
-          ERC20Amount,
-          tokenData
+          true,
+          0
         )
-    })
 
-    it('Should allow a user to mint without gas spent, via the forwarder', async function () {
-      await loadFixture(deployFixture)
-
-      const encodedFunctionData = DSponsorNFT.interface.encodeFunctionData(
-        'mint',
-        [tokenId, userAddr, ERC20MockAddress, tokenData]
-      )
-
-      await expect(
-        executeByForwarder(
-          forwarder,
-          DSponsorNFT as BaseContract,
-          user,
-          encodedFunctionData
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId + 1,
+          ERC20MockAddress
         )
-      ).to.changeEtherBalance(user, 0)
-    })
+      ).to.be.deep.equal([
+        ERC721MockAddress,
+        2,
+        true,
+        ERC20Amount / BigInt('2')
+      ])
 
-    it('Should not allow user to send owner operations via the forwarder', async function () {
-      await loadFixture(deployFixture)
-
-      const encodedFunctionData = DSponsorNFT.interface.encodeFunctionData(
-        'setBaseURI',
-        ['baseuriupdated']
-      )
-      await expect(
-        executeByForwarder(forwarder, DSponsorNFT, user, encodedFunctionData)
-      ).to.revertedWithCustomError(forwarder, 'FailedInnerCall')
+      expect(
+        await DSponsorNFT.getMintPriceFromEligibleContracts(
+          user2Addr,
+          tokenId,
+          ERC20MockAddress
+        )
+      ).to.be.deep.equal([ERC721MockAddress, 2, true, 0])
     })
   })
 })

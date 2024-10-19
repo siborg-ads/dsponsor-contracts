@@ -200,6 +200,7 @@ contract DSponsorNFTExtended is DSponsorNFT {
                                 result.eligibleTokenId = ownedTokenId;
                                 result.enabled = true;
                                 result.amount = mintPrice.amount;
+                                break;
                             }
                         }
                     }
@@ -265,7 +266,7 @@ contract DSponsorNFTExtended is DSponsorNFT {
 
             MintPriceResult
                 memory mintPriceResult = getMintPriceFromEligibleContracts(
-                    _msgSender(),
+                    to,
                     tokenId,
                     currency
                 );

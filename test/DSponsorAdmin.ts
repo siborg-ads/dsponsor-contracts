@@ -129,7 +129,7 @@ describe('DSponsorAdmin', function () {
     ERC20MockAddress = await ERC20Mock.getAddress()
     await ERC20Mock.mint(userAddr, ERC20Amount * BigInt('10'))
 
-    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFTExtended', [])
+    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFT', [])
     DSponsorNFTImplementationAddress =
       await DSponsorNFTImplementation.getAddress()
 
@@ -139,7 +139,7 @@ describe('DSponsorAdmin', function () {
     DSponsorNFTFactoryAddress = await DSponsorNFTFactory.getAddress()
 
     initDSponsorNFTParams = {
-      name: 'DSponsorNFTExtended',
+      name: 'DSponsorNFT',
       symbol: 'DSNFT',
       baseURI: 'baseURI',
       contractURI: 'contractURI',
@@ -187,7 +187,7 @@ describe('DSponsorAdmin', function () {
     if (!event) throw new Error('No event')
 
     DSponsorNFTAddress = event.args[0]
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFTExtended', DSponsorNFTAddress)
+    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
 
     await ERC20Mock.connect(user).approve(
       DSponsorAdminAddress,
@@ -276,7 +276,7 @@ describe('DSponsorAdmin', function () {
       ).to.equal(true)
 
       const DSponsorNFTCreated: DSponsorNFT = await ethers.getContractAt(
-        'DSponsorNFTExtended',
+        'DSponsorNFT',
         await DSponsorAdmin.getOfferContract(2)
       )
       expect(await DSponsorNFTCreated.owner()).to.equal(
@@ -1247,7 +1247,7 @@ describe('DSponsorAdmin', function () {
 
       const SiborgDSponsorNFTAddress = NewDSponsorNFTevent?.args[0]
       const SiborgDSponsorNFT = await ethers.getContractAt(
-        'DSponsorNFTExtended',
+        'DSponsorNFT',
         SiborgDSponsorNFTAddress
       )
 

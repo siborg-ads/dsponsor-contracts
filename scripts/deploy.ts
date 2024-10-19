@@ -116,7 +116,7 @@ async function deployContracts() {
   )
 
   const DSponsorNFTImplementation = await ethers.deployContract(
-    'DSponsorNFTExtended',
+    'DSponsorNFT',
     []
   )
   DSponsorNFTImplementationAddr = await DSponsorNFTImplementation.getAddress()
@@ -1486,7 +1486,7 @@ async function deploySiBorgOffer() {
   }
 
   const DSponsorNFT = await ethers.getContractAt(
-    'DSponsorNFTExtended',
+    'DSponsorNFT',
     DSponsorNFTAddress
   )
   for (const {
@@ -1620,7 +1620,7 @@ async function deployOffer({
 
     // alternative : create offer from nft contract
     /*
-    const DSponsorNFT = await ethers.deployContract('DSponsorNFTExtended', [])
+    const DSponsorNFT = await ethers.deployContract('DSponsorNFT', [])
     await DSponsorNFT.initialize(initDSponsorNFTParams)
     DSponsorNFTAddress = await DSponsorNFT.getAddress()
 
