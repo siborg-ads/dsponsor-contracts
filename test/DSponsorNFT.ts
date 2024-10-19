@@ -22,7 +22,7 @@ import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFT'
 
 import { ZERO_ADDRESS } from '../utils/constants'
 
-describe('DSponsorNFT', function () {
+describe('DSponsorNFTExtended', function () {
   const provider = ethers.provider
 
   let DSponsorNFTFactory: DSponsorNFTFactory
@@ -106,7 +106,10 @@ describe('DSponsorNFT', function () {
     await reentrant.waitForDeployment()
     reentrantAddress = await reentrant.getAddress()
 
-    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFT', [])
+    DSponsorNFTImplementation = await ethers.deployContract(
+      'DSponsorNFTExtended',
+      []
+    )
     DSponsorNFTImplementationAddress =
       await DSponsorNFTImplementation.getAddress()
 
@@ -115,7 +118,7 @@ describe('DSponsorNFT', function () {
     ])
 
     initParams = {
-      name: 'DSponsorNFT',
+      name: 'DSponsorNFTExtended',
       symbol: 'DSNFT',
       baseURI: 'https://baseURI.com',
       contractURI: 'https://contractURI.com',
@@ -138,7 +141,10 @@ describe('DSponsorNFT', function () {
     if (!event) throw new Error('No event')
 
     DSponsorNFTAddress = event.args[0].toLowerCase()
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
+    DSponsorNFT = await ethers.getContractAt(
+      'DSponsorNFTExtended',
+      DSponsorNFTAddress
+    )
 
     await ERC20Mock.connect(user).approve(
       DSponsorNFTAddress,
@@ -283,7 +289,7 @@ describe('DSponsorNFT', function () {
 
       const DSponsorNFTAddress2 = event.args[0]
       const DSponsorNFT2 = await ethers.getContractAt(
-        'DSponsorNFT',
+        'DSponsorNFTExtended',
         DSponsorNFTAddress2
       )
 

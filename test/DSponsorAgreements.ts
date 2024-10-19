@@ -103,7 +103,10 @@ describe('DSponsorAgreements', function () {
     await ERC721Mock.connect(user).mint(tokensUser[0])
     await ERC721Mock.connect(user2).mint(tokensUser[1])
 
-    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFT', [])
+    DSponsorNFTImplementation = await ethers.deployContract(
+      'DSponsorNFTExtended',
+      []
+    )
     DSponsorNFTImplementationAddress =
       await DSponsorNFTImplementation.getAddress()
 
@@ -112,7 +115,7 @@ describe('DSponsorAgreements', function () {
     ])
 
     initDSponsorNFTParams = {
-      name: 'DSponsorNFT',
+      name: 'DSponsorNFTExtended',
       symbol: 'DSNFT',
       baseURI: 'baseURI',
       contractURI: 'contractURI',
@@ -135,7 +138,10 @@ describe('DSponsorAgreements', function () {
     if (!event) throw new Error('No event')
 
     DSponsorNFTAddress = event.args[0]
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
+    DSponsorNFT = await ethers.getContractAt(
+      'DSponsorNFTExtended',
+      DSponsorNFTAddress
+    )
 
     await ERC20Mock.connect(user).approve(
       DSponsorNFTAddress,

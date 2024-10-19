@@ -57,12 +57,8 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
-        details: {
-          yul: true
-        }
-      },
-      viaIR: false
+        runs: 200
+      }
     }
   },
 
@@ -70,7 +66,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.BASE_RPC_URL as string,
-        blockNumber: 15141916
+        blockNumber: 21110187
       },
       chainId: 8453
 

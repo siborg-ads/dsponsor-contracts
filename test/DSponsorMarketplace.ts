@@ -140,7 +140,10 @@ describe('DSponsorMarketplace', function () {
     await ERC20Mock.mint(user3Addr, ERC20Amount * BigInt('10'))
     await ERC20Mock.mint(user4Addr, ERC20Amount * BigInt('10'))
 
-    DSponsorNFTImplementation = await ethers.deployContract('DSponsorNFT', [])
+    DSponsorNFTImplementation = await ethers.deployContract(
+      'DSponsorNFTExtended',
+      []
+    )
     DSponsorNFTImplementationAddress =
       await DSponsorNFTImplementation.getAddress()
 
@@ -149,7 +152,7 @@ describe('DSponsorMarketplace', function () {
     ])
 
     initDSponsorNFTParams = {
-      name: 'DSponsorNFT',
+      name: 'DSponsorNFTExtended',
       symbol: 'DSNFT',
       baseURI: 'baseURI',
       contractURI: 'contractURI',
@@ -172,7 +175,10 @@ describe('DSponsorMarketplace', function () {
     if (!event) throw new Error('No event')
 
     DSponsorNFTAddress = event.args[0]
-    DSponsorNFT = await ethers.getContractAt('DSponsorNFT', DSponsorNFTAddress)
+    DSponsorNFT = await ethers.getContractAt(
+      'DSponsorNFTExtended',
+      DSponsorNFTAddress
+    )
 
     await DSponsorNFT.connect(owner).mint(0, ownerAddr, ZERO_ADDRESS, '')
     await DSponsorNFT.connect(owner).mint(1, userAddr, ZERO_ADDRESS, '')
