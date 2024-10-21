@@ -1,22 +1,35 @@
 import 'dotenv/config'
 import fs from 'fs'
 
-import { parseEther } from 'ethers'
+import { parseEther, parseUnits } from 'ethers'
 import { ethers, run } from 'hardhat'
+import { IDSponsorNFTBase } from '../typechain-types/contracts/DSponsorNFTPrivateSales'
+import {
+  DSPONSOR_ADMIN_ADDR,
+  DSPONSOR_FACTORY_ADDR,
+  FORWARDER_ADDR,
+  USDC_ADDR
+} from '../utils/constants'
+import { IDSponsorAgreements } from '../typechain-types/contracts/DSponsorAgreements'
+import { DSponsorAdmin__factory } from '../typechain-types'
 
 const { ALCHEMY_API_KEY } = process.env
 
 const CRYPTOAST_JOURNAL_DAO_CONTRACT_ADDR =
   '0x0012989E982C2c473e36418384Ab707C72f2B782'
 const SNAPSHOT_FILE = './data/cryptoastSnapshot_2024-10-15.json'
-const SEPOLIA_GALAXY_SNAPSHOT_CONTRACT_ADDR =
-  '0x4D546c111Dda413AE8DFbef4340d213966f3d81F'
-const SEPOLIA_GOLD_SNAPSHOT_CONTRACT_ADDR =
-  '0x5117Ab34594360ED5031086874c5401591AFac69'
-const BASE_GALAXY_SNAPSHOT_CONTRACT_ADDR =
-  '0x86987569e1B3f03467270884Ae17CB002e3b7456'
-const BASE_GOLD_SNAPSHOT_CONTRACT_ADDR =
-  '0xac389a71638709094c3EECB3616a3849C19777Af'
+const GALAXY_SNAPSHOT_CONTRACT_ADDR = (chainId: string) =>
+  chainId === '11155111'
+    ? '0x4D546c111Dda413AE8DFbef4340d213966f3d81F'
+    : chainId === '8453'
+      ? '0x86987569e1B3f03467270884Ae17CB002e3b7456'
+      : ''
+const GOLD_SNAPSHOT_CONTRACT_ADDR = (chainId: string) =>
+  chainId === '11155111'
+    ? '0x5117Ab34594360ED5031086874c5401591AFac69'
+    : chainId === '8453'
+      ? '0xac389a71638709094c3EECB3616a3849C19777Af'
+      : ''
 
 const { provider } = ethers
 
@@ -123,4 +136,173 @@ async function airdrop(attribute: 'Galaxy' | 'Gold') {
   }
 }
 
-// airdrop('Galaxy').catch(console.error)
+async function deployOffer() {
+  const { name: networkName, chainId: chainIdBigInt } =
+    await provider.getNetwork()
+  const chainId = chainIdBigInt.toString()
+
+  const [deployer] = await ethers.getSigners()
+  const deployerAddr = await deployer.getAddress()
+
+  const DSponsorAdmin = await ethers.getContractAt(
+    'DSponsorAdmin',
+    DSPONSOR_ADMIN_ADDR[chainId]
+  )
+  const DSponsorAdminAddress = await DSponsorAdmin.getAddress()
+
+  console.log(
+    `Deploying Cryptoast Parcelles to ${networkName} (chainId: ${chainId}) 
+    with deployer: ${deployerAddr}, and DSponsorAdmin: ${DSponsorAdminAddress}`
+  )
+
+  const maxSupply = 100
+
+  const adParameters: string[] = ['linkURL', 'imageURL-1:1']
+
+  const offerInit: IDSponsorAgreements.OfferInitParamsStruct = {
+    name: 'Parcelles - Journal Cryptoast #5',
+    offerMetadata:
+      'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmSH5WsBmx3rc3Z55mqTq2khk6xgmNdjqrJhCqbKCKtJuP',
+    options: {
+      admins: [deployerAddr],
+      validators: [],
+      adParameters
+    }
+  }
+
+  const initDSponsorNFTParams: IDSponsorNFTBase.InitParamsStruct = {
+    name: 'Parcelles - Journal Cryptoast #5',
+    symbol: 'CP5',
+    baseURI: `https://relayer.dsponsor.com/api/${chainId}/tokenMetadata`,
+    contractURI:
+      'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmfDX4TssDU4tZsod3CwuaGSiSv6QtCU7qseBvdfeMrZX5',
+    maxSupply,
+    minter: deployerAddr, // will be replaced by DSponsorAdmin
+    forwarder: FORWARDER_ADDR[chainId],
+    initialOwner: deployerAddr,
+    royaltyBps: 500, // 5 %
+    currencies: [],
+    prices: [],
+    allowedTokenIds: []
+  }
+
+  const DSponsorNFTImplementation = await ethers.deployContract(
+    'DSponsorNFTPrivateSales',
+    []
+  )
+  const DSponsorNFTImplementationAddress =
+    await DSponsorNFTImplementation.getAddress()
+
+  const DSponsorNFTFactory = await ethers.deployContract('DSponsorNFTFactory', [
+    DSponsorNFTImplementationAddress
+  ])
+
+  const tx = await DSponsorNFTFactory.createDSponsorNFT(initDSponsorNFTParams, {
+    gasLimit: 2000000
+  })
+
+  await tx.wait(6)
+
+  if (!tx.hash) throw new Error('No tx hash')
+  const receipt = await provider.getTransactionReceipt(tx.hash || '')
+  const event = receipt?.logs
+    .map((log: any) => DSponsorNFTFactory.interface.parseLog(log))
+    .find((e) => e?.name === 'NewDSponsorNFT')
+  if (!event) throw new Error('No event')
+
+  const DSponsorNFTAddress = event.args[0].toLowerCase()
+  const DSponsorNFT = await ethers.getContractAt(
+    'DSponsorNFTPrivateSales',
+    DSponsorNFTAddress
+  )
+
+  console.log(`DSponsorNFT deployed to: ${DSponsorNFTAddress}`)
+
+  await DSponsorNFT.connect(deployer).setPrivateSaleSettings(
+    USDC_ADDR[chainId],
+    GOLD_SNAPSHOT_CONTRACT_ADDR(chainId),
+    1
+  )
+
+  await DSponsorNFT.connect(deployer).setPrivateSaleSettings(
+    '0x0000000000000000000000000000000000000000',
+    GALAXY_SNAPSHOT_CONTRACT_ADDR(chainId),
+    1
+  )
+
+  console.log('Private sale settings set')
+
+  await DSponsorAdmin.createOffer(DSponsorNFTAddress, offerInit)
+
+  console.log('Offer created')
+
+  await DSponsorNFT.connect(deployer).setDefaultMintPrice(
+    USDC_ADDR[chainId],
+    true,
+    parseUnits('20', 6)
+  )
+
+  await DSponsorNFT.connect(deployer).setDefaultMintPrice(
+    '0x0000000000000000000000000000000000000000',
+
+    true,
+    0
+  )
+
+  console.log('Default mint prices set')
+
+  await DSponsorNFT.setTokensAllowlist(true)
+
+  await DSponsorNFT.setTokensAreAllowed(
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 1 to 10')
+  await DSponsorNFT.setTokensAreAllowed(
+    [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 11 to 20')
+  await DSponsorNFT.setTokensAreAllowed(
+    [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 21 to 30')
+  await DSponsorNFT.setTokensAreAllowed(
+    [31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 31 to 40')
+  await DSponsorNFT.setTokensAreAllowed(
+    [41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 41 to 50')
+  await DSponsorNFT.setTokensAreAllowed(
+    [51, 52, 53, 54, 55, 56, 57, 58, 59, 60],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 51 to 60')
+  await DSponsorNFT.setTokensAreAllowed(
+    [61, 62, 63, 64, 65, 66, 67, 68, 69, 70],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 61 to 70')
+  await DSponsorNFT.setTokensAreAllowed(
+    [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 71 to 80')
+  await DSponsorNFT.setTokensAreAllowed(
+    [81, 82, 83, 84, 85, 86, 87, 88, 89, 90],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 81 to 90')
+  await DSponsorNFT.setTokensAreAllowed(
+    [91, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+    [true, true, true, true, true, true, true, true, true, true]
+  )
+  console.log('Tokens are allowed set from 91 to 100')
+}
+
+deployOffer().catch(console.error)
