@@ -1318,8 +1318,10 @@ describe('DSponsorAdmin', function () {
         DSponsorAdminAddress,
         mintAmounts(amounts[0]).amountWithFee
       )
+
       const mintTx0 =
         await DSponsorAdmin.connect(sponsor1).mintAndSubmit(mintParams0)
+
       await expect(mintTx0).changeTokenBalances(
         ERC20Mock,
         [sponsor1, siborgOwner, treasury],

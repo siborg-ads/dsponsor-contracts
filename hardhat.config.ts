@@ -7,8 +7,6 @@ import '@openzeppelin/hardhat-upgrades'
 import type { HardhatUserConfig } from 'hardhat/config'
 import type { NetworksUserConfig } from 'hardhat/types'
 
-import '@matterlabs/hardhat-zksync'
-
 const deploymentNetworks: NetworksUserConfig = {}
 
 if (process.env.BASE_RPC_URL && process.env.DEPLOYER_PRIVATE_KEY) {
@@ -32,6 +30,7 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
     accounts: [process.env.DEPLOYER_PRIVATE_KEY]
   }
 
+  /*
   deploymentNetworks.abstractTestnet = {
     url: 'https://api.testnet.abs.xyz',
     chainId: 11124,
@@ -41,9 +40,11 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
     verifyURL:
       'https://api-explorer-verify.testnet.abs.xyz/contract_verification'
   }
+  */
 }
 
 const config: HardhatUserConfig = {
+  /*
   zksolc: {
     version: 'latest',
     settings: {
@@ -51,6 +52,7 @@ const config: HardhatUserConfig = {
       enableEraVMExtensions: false
     }
   },
+  */
 
   solidity: {
     version: '0.8.20',
@@ -70,7 +72,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.BASE_RPC_URL as string,
-        blockNumber: 15141916
+        blockNumber: 21110187
       },
       chainId: 8453
 

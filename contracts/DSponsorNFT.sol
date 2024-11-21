@@ -45,25 +45,25 @@ contract DSponsorNFT is
     // Whether minting is allowed for a specific list of tokenIds or not
     bool public applyTokensAllowlist;
 
-    // Mapping to store allowed tokenIds to mint
-    mapping(uint256 => bool) private allowedTokenIds;
-
     // Mapping to store custom URIs for individual tokens, if set.
     mapping(uint256 => string) public tokenURIs;
 
+    // Mapping to store allowed tokenIds to mint
+    mapping(uint256 => bool) public allowedTokenIds;
+
     // Mapping to store default minting price settings for each ERC20 token.
-    mapping(IERC20 => MintPriceSettings) private _defaultMintERC20Prices;
+    mapping(IERC20 => MintPriceSettings) internal _defaultMintERC20Prices;
 
     // Settings for default minting price in the native currency (e.g., ETH).
-    MintPriceSettings private _defaultMintNativePrice =
+    MintPriceSettings internal _defaultMintNativePrice =
         MintPriceSettings(false, 0);
 
     // Mapping to store minting price settings for each ERC20 token, per token ID.
     mapping(uint256 => mapping(IERC20 => MintPriceSettings))
-        private _mintERC20Prices;
+        internal _mintERC20Prices;
 
     // Mapping to store minting price settings for the native currency, per token ID.
-    mapping(uint256 => MintPriceSettings) private _mintNativePrices;
+    mapping(uint256 => MintPriceSettings) internal _mintNativePrices;
 
     /**
      * @dev Initializes the contract with necessary parameters
@@ -140,7 +140,7 @@ contract DSponsorNFT is
         address to,
         address currency,
         string calldata tokenData
-    ) public payable nonReentrant {
+    ) public payable virtual nonReentrant {
         if (_ownerOf(tokenId) != address(0)) {
             revert AlreadyMinted(tokenId);
         }
