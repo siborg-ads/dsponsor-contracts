@@ -29,6 +29,10 @@ While any ERC721-compliant contract can be used with the DSponsor protocol, this
 - Incorporates ERC2981 royalties.
 - Enables the contract owner to define a custom base URI for token metadata and a contract-level metadata URI.
 
+#### DSponsorNFTPrivateSales.sol
+
+Extends DSponsorNFT with mint restriction based on token holdings from a previous NFT collection.
+
 ### DSponsorMarketplace.sol
 
 This contract manages secondary sales and includes:
@@ -48,6 +52,8 @@ This contract manages secondary sales and includes:
 - `DSponsorNFTFactory`: [`0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09`](https://basescan.org/address/0xdf42633BD40e8f46942e44a80F3A58d0Ec971f09)
 
 - Example of `DSponsorNFT` deployed: [`0x141feC749536067fe4b9291FB00a8a398023c7C9`](https://basescan.org/address/0x141feC749536067fe4b9291FB00a8a398023c7C9)
+
+- Example of `DSponsorNFTPrivateSales` deployed: [`0x3b8cA877b8c7394D0C120764AcB09f688f5DFd72`](https://basescan.org/address/0x3b8cA877b8c7394D0C120764AcB09f688f5DFd72)
 
 - `DSponsorMarketplace`: [`0x86aDf604B5B72d270654F3A0798cabeBC677C7fc`](https://basescan.org/address/0x86aDf604B5B72d270654F3A0798cabeBC677C7fc)
 

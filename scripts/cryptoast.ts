@@ -157,12 +157,12 @@ async function deployOffer() {
 
   const maxSupply = 100
 
-  const adParameters: string[] = ['linkURL', 'imageURL-1:1']
+  const adParameters: string[] = ['imageURL-1:1']
 
   const offerInit: IDSponsorAgreements.OfferInitParamsStruct = {
     name: 'Parcelles - Journal Cryptoast #5',
     offerMetadata:
-      'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmSH5WsBmx3rc3Z55mqTq2khk6xgmNdjqrJhCqbKCKtJuP',
+      'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/Qmcdqn4tTQaotcrYiU1JFHZYqQhrn2ksgVhP5p6BsiLXT1',
     options: {
       admins: [deployerAddr],
       validators: [],
@@ -177,7 +177,7 @@ async function deployOffer() {
     contractURI:
       'https://orange-elegant-swallow-161.mypinata.cloud/ipfs/QmfDX4TssDU4tZsod3CwuaGSiSv6QtCU7qseBvdfeMrZX5',
     maxSupply,
-    minter: deployerAddr, // will be replaced by DSponsorAdmin
+    minter: DSponsorAdminAddress,
     forwarder: FORWARDER_ADDR[chainId],
     initialOwner: deployerAddr,
     royaltyBps: 500, // 5 %
@@ -193,13 +193,22 @@ async function deployOffer() {
   const DSponsorNFTImplementationAddress =
     await DSponsorNFTImplementation.getAddress()
 
+  console.log(
+    'DSponsorNFTImplementation deployed to: ',
+    DSponsorNFTImplementationAddress
+  )
+
   const DSponsorNFTFactory = await ethers.deployContract('DSponsorNFTFactory', [
     DSponsorNFTImplementationAddress
   ])
 
-  const tx = await DSponsorNFTFactory.createDSponsorNFT(initDSponsorNFTParams, {
-    gasLimit: 2000000
-  })
+  const DSponsorNFTFactoryAddress = await DSponsorNFTFactory.getAddress()
+
+  console.log('DSponsorNFTFactory deployed to: ', DSponsorNFTFactoryAddress)
+
+  const tx = await DSponsorNFTFactory.createDSponsorNFT(initDSponsorNFTParams)
+
+  console.log('DSponsorNFTFactory.createDSponsorNFT tx hash: ', tx.hash)
 
   await tx.wait(6)
 
@@ -211,6 +220,7 @@ async function deployOffer() {
   if (!event) throw new Error('No event')
 
   const DSponsorNFTAddress = event.args[0].toLowerCase()
+
   const DSponsorNFT = await ethers.getContractAt(
     'DSponsorNFTPrivateSales',
     DSponsorNFTAddress
@@ -239,12 +249,11 @@ async function deployOffer() {
   await DSponsorNFT.connect(deployer).setDefaultMintPrice(
     USDC_ADDR[chainId],
     true,
-    parseUnits('20', 6)
+    parseUnits('25', 6)
   )
 
   await DSponsorNFT.connect(deployer).setDefaultMintPrice(
     '0x0000000000000000000000000000000000000000',
-
     true,
     0
   )
